@@ -1,0 +1,242 @@
+{!-- a click on the row, outside its buttons, forms and dropdowns, or Enter while it has focus, opens the task's discussion in the preview modal, as a feed activity does (D9); the hook is colocated, so it's registered under its component's name --}
+<li
+  id={"task_#{id(@task)}"}
+  phx-hook="Bonfire.UI.Common.PreviewContentLive#PreviewActivity"
+  data-href={"/discussion/#{id(@task)}"}
+  data-done={@done?}
+  tabindex="0"
+  class="group flex h-11 cursor-pointer items-center gap-3 px-4 transition-colors hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-6"
+>
+  <Bonfire.UI.Common.OpenPreviewLive
+    href={"/discussion/#{id(@task)}"}
+    parent_id={"task_#{id(@task)}"}
+    open_btn_text=""
+    title_text={@task.name}
+    modal_assigns={preview_assigns(@task)}
+    root_assigns={[page_title: l("Task")]}
+  />
+
+  {!-- a button that reads as a checkbox: done in the open views, reopen in Done --}
+  {#if @done?}
+    <button
+      type="button"
+      id={"task_#{id(@task)}_reopen"}
+      role="checkbox"
+      aria-checked="true"
+      phx-click="Bonfire.Divlab:reopen"
+      phx-value-task_id={id(@task)}
+      phx-target={@event_target}
+      class="touch-target-expanded relative grid size-4 shrink-0 place-items-center rounded-full bg-primary text-primary-content transition-colors hover:bg-primary/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <span class="touch-target-hit-area" aria-hidden="true" />
+      <#Icon iconify="ph:check-bold" class="size-3" />
+      <span class="sr-only">{l("Mark not done")}</span>
+    </button>
+  {#else}
+    <button
+      type="button"
+      id={"task_#{id(@task)}_done"}
+      role="checkbox"
+      aria-checked="false"
+      phx-click="Bonfire.Divlab:done"
+      phx-value-task_id={id(@task)}
+      phx-target={@event_target}
+      class="touch-target-expanded relative grid size-4 shrink-0 place-items-center rounded-full border-[1.5px] border-base-content/60 transition-colors hover:border-primary hover:bg-primary/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <span class="touch-target-hit-area" aria-hidden="true" />
+      <span class="sr-only">{l("Mark done")}</span>
+    </button>
+  {/if}
+
+  <p
+    data-role="task_title"
+    title={@task.name}
+    class={"min-w-0 flex-1 truncate", "text-base-content/60 line-through": @done?}
+  >
+    {@task.name}
+    {#if @task.note}
+      <#Icon iconify="ph:text-align-left" class="ml-1 inline size-3.5 align-[-2px] text-base-content/50" />
+    {/if}
+  </p>
+
+  {!-- revealed on hover and keyboard focus, always shown where there's no hover --}
+  <button
+    :if={@view == :inbox}
+    type="button"
+    id={"task_#{id(@task)}_take"}
+    phx-click="Bonfire.Divlab:take"
+    phx-value-task_id={id(@task)}
+    phx-target={@event_target}
+    class="btn btn-ghost btn-xs shrink-0 !font-normal opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 [@media(hover:none)]:opacity-100"
+  >{l("Take it")}</button>
+
+  <Dropdown
+    id={"task_#{id(@task)}_due_menu"}
+    position="bottom-end"
+    menu={false}
+    trigger_class={
+      "btn btn-ghost btn-xs w-20 shrink-0 justify-end !font-normal tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+      "text-error": overdue?(@task),
+      "text-base-content/70": !overdue?(@task)
+    }
+    panel_class="!w-56 flex flex-col gap-0.5 p-1.5"
+    label={if @task.due, do: l("Date: %{date}", date: due_label(@task.due)), else: l("Set a date")}
+  >
+    <:trigger>
+      <time
+        :if={@task.due}
+        data-role="task_due"
+        data-overdue={overdue?(@task)}
+        datetime={DateTime.to_iso8601(@task.due)}
+      >{due_label(@task.due)}</time>
+      {#if !@task.due}
+        <#Icon
+          iconify="ph:calendar-blank"
+          class="size-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+        />
+      {/if}
+    </:trigger>
+    {#for {key, label, date} <- quick_dates()}
+      <button
+        type="button"
+        id={"task_#{id(@task)}_due_#{key}"}
+        phx-click="Bonfire.Divlab:set_due"
+        phx-value-task_id={id(@task)}
+        phx-value-due={Date.to_iso8601(date)}
+        phx-target={@event_target}
+        class="btn btn-ghost btn-sm justify-between !font-normal"
+      >
+        {label}
+        <span class="text-base-content/60">{Bonfire.Common.DatesTimes.format_date(date, format: "EEE d")}</span>
+      </button>
+    {/for}
+    <form
+      id={"task_#{id(@task)}_due_form"}
+      phx-change="Bonfire.Divlab:set_due"
+      phx-target={@event_target}
+      class="mt-1 border-t border-base-content/10 px-1.5 pt-1.5"
+    >
+      <input type="hidden" name="task_id" value={id(@task)}>
+      <label for={"task_#{id(@task)}_due"} class="sr-only">{l("Pick a date")}</label>
+      <input
+        id={"task_#{id(@task)}_due"}
+        type="date"
+        name="due"
+        value={@task.due && Date.to_iso8601(DateTime.to_date(@task.due))}
+        class="input input-bordered input-sm w-full"
+      />
+    </form>
+    <button
+      :if={@task.due}
+      type="button"
+      id={"task_#{id(@task)}_no_due"}
+      phx-click="Bonfire.Divlab:clear_due"
+      phx-value-task_id={id(@task)}
+      phx-target={@event_target}
+      class="btn btn-ghost btn-sm justify-start !font-normal text-base-content/70"
+    >{l("No date")}</button>
+  </Dropdown>
+
+  <Dropdown
+    id={"task_#{id(@task)}_owner_menu"}
+    position="bottom-end"
+    menu={false}
+    trigger_class="grid size-7 shrink-0 place-items-center rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    panel_class="!w-64 flex flex-col gap-0.5 p-1.5"
+    label={if owner_name(@task), do: l("Owner: %{name}", name: owner_name(@task)), else: l("Assign")}
+  >
+    <:trigger>
+      {#if owner_name(@task)}
+        <span data-role="task_owner" class="contents">
+          <Bonfire.UI.Common.AvatarLive
+            user_id={id(@task.provider)}
+            src={Media.avatar_url(@task.provider)}
+            title={owner_name(@task)}
+            class="size-6 rounded-full overflow-hidden"
+            fallback_class="size-6"
+            parent_id={"task_#{id(@task)}_owner"}
+          />
+          <span class="sr-only">{owner_name(@task)}</span>
+        </span>
+      {#else}
+        <span class="size-6 rounded-full border border-dashed border-base-content/50" />
+      {/if}
+    </:trigger>
+    {!-- the browser filters the members as you type (the board's one `<datalist>`), with no JS; Enter assigns --}
+    <form
+      id={"task_#{id(@task)}_assign"}
+      phx-submit="Bonfire.Divlab:assign"
+      phx-target={@event_target}
+      class="mb-1 border-b border-base-content/10 pb-1.5"
+    >
+      <input type="hidden" name="task_id" value={id(@task)}>
+      <label for={"task_#{id(@task)}_owner"} class="sr-only">{l("Owner")}</label>
+      <input
+        id={"task_#{id(@task)}_owner"}
+        name="owner"
+        list="tasks_member_options"
+        autocomplete="off"
+        placeholder={l("Assign to…")}
+        class="input input-ghost input-sm w-full"
+      />
+    </form>
+    <div class="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
+      {#for member <- @members}
+        <button
+          type="button"
+          id={"task_#{id(@task)}_owner_#{member.id}"}
+          phx-click="Bonfire.Divlab:assign"
+          phx-value-task_id={id(@task)}
+          phx-value-owner={member.username}
+          phx-target={@event_target}
+          class="btn btn-ghost btn-sm justify-start gap-2 !font-normal"
+        >
+          <img src={member.avatar} alt="" class="size-5 rounded-full object-cover">
+          <span class="truncate">{member.name}</span>
+          <span :if={member.id == current_user_id(@__context__)} class="text-base-content/60">{l("you")}</span>
+          {#if member.id == @task.provider_id}
+            <#Icon iconify="ph:check" class="ml-auto size-4 text-primary" />
+          {/if}
+        </button>
+      {/for}
+    </div>
+    <button
+      :if={@task.provider_id}
+      type="button"
+      id={"task_#{id(@task)}_unassign"}
+      phx-click="Bonfire.Divlab:unassign"
+      phx-value-task_id={id(@task)}
+      phx-target={@event_target}
+      class="btn btn-ghost btn-sm mt-1 justify-start gap-2 border-t border-base-content/10 !font-normal text-base-content/70"
+    >
+      <span class="size-5 rounded-full border border-dashed border-base-content/50" />
+      {l("Nobody, back to the Inbox")}
+    </button>
+  </Dropdown>
+
+  <Dropdown
+    :if={@may_delete}
+    id={"task_#{id(@task)}_menu"}
+    position="bottom-end"
+    trigger_class="btn btn-ghost btn-circle btn-xs shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary [@media(hover:none)]:opacity-100"
+    label={l("More actions")}
+  >
+    <:trigger>
+      <#Icon iconify="ph:dots-three-bold" class="size-4" />
+    </:trigger>
+    <li>
+      <button
+        type="button"
+        id={"task_#{id(@task)}_delete"}
+        phx-click="Bonfire.Divlab:delete"
+        phx-value-task_id={id(@task)}
+        phx-target={@event_target}
+        data-confirm={l("Delete this task?")}
+        class="text-error"
+      >
+        <#Icon iconify="ph:trash" class="size-4" />
+        {l("Delete")}
+      </button>
+    </li>
+  </Dropdown>
+</li>

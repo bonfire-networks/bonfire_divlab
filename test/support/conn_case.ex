@@ -1,4 +1,4 @@
-defmodule Bonfire.ExtensionTemplate.ConnCase do
+defmodule Bonfire.Divlab.ConnCase do
   @moduledoc """
   This module defines the test case to be used by
   tests that require setting up a connection.
@@ -24,9 +24,16 @@ defmodule Bonfire.ExtensionTemplate.ConnCase do
       import Phoenix.ConnTest
 
       import Bonfire.UI.Common.Testing.Helpers
-      import Phoenix.LiveViewTest
 
-      # import Bonfire.ExtensionTemplate.Fake
+      import Phoenix.LiveViewTest, except: [open_browser: 1, open_browser: 2]
+
+      import PhoenixTest
+
+      alias Bonfire.Me.Fake
+
+      use Bonfire.Common.Utils
+      use Bonfire.Common.Config
+      use Bonfire.Common.Repo
 
       # The default endpoint for testing
       @endpoint Application.compile_env!(:bonfire, :endpoint_module)
@@ -36,8 +43,6 @@ defmodule Bonfire.ExtensionTemplate.ConnCase do
   end
 
   setup tags do
-    import Bonfire.ExtensionTemplate
-
     Bonfire.Common.Test.Interactive.setup_test_repo(tags)
 
     {:ok, []}

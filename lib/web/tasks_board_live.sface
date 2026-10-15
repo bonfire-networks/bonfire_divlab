@@ -1,0 +1,41 @@
+<div id="tasks_board" class="flex flex-col">
+  <nav
+    aria-label={l("Task views")}
+    class="flex gap-1 overflow-x-auto border-b-hair border-divider px-4 sm:px-6"
+  >
+    {#for {view, slug} <- views()}
+      <LinkPatchLive
+        to={"#{path(@category)}/tasks/#{slug}"}
+        class={
+          "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition-colors",
+          "border-primary text-base-content": view == @view,
+          "border-transparent text-muted hover:text-base-content": view != @view
+        }
+        opts={[id: "tasks_tab_#{view}", "aria-current": if(view == @view, do: "page")]}
+      >
+        {view_label(view)}
+        <span :if={view != :done} data-role="count" class="text-xs tabular-nums text-muted">{length(@lists[view] || [])}</span>
+      </LinkPatchLive>
+    {/for}
+  </nav>
+  {!-- one list of the group's members for every row's owner search --}
+  <datalist id="tasks_member_options">
+    <option :for={member <- @members} value={member.username}>{member.name}</option>
+  </datalist>
+  {#case @lists[@view] || []}
+    {#match []}
+      <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(@view)}</p>
+    {#match tasks}
+      <ul id="tasks_list" class="divide-hair divide-divider">
+        {#for task <- tasks}
+          <Bonfire.Divlab.Web.TaskRowLive
+            task={task}
+            view={@view}
+            members={@members}
+            may_delete={MapSet.member?(@deletable, id(task))}
+            event_target={@myself}
+          />
+        {/for}
+      </ul>
+  {/case}
+</div>

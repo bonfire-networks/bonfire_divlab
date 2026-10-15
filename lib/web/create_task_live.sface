@@ -1,0 +1,182 @@
+<div id="smart_input_task" class="write_post_content flex flex-col flex-1 min-h-0">
+  {#if @group}
+    {!-- the owner search and the date input belong to these forms through `form=`, outside the composer's, so Enter or a picked date reaches `CreateTaskLive` instead of submitting or validating the task --}
+    <form
+      id="task_owner_search"
+      phx-submit="Bonfire.Divlab:pick_task_owner"
+      phx-target={@myself}
+      class="hidden"
+    ></form>
+    <form
+      id="task_due_pick"
+      phx-change="Bonfire.Divlab:pick_task_due"
+      phx-target={@myself}
+      class="hidden"
+    ></form>
+    <datalist id="task_owner_options">
+      <option :for={member <- @members} value={member.username}>{member.name}</option>
+    </datalist>
+    <div id="smart_input_task_content" class="flex flex-col flex-1 min-h-0">
+      <Form
+        for={%{}}
+        as={:post}
+        submit="Bonfire.Divlab:create_task"
+        change="Bonfire.UI.Common.SmartInput:validate"
+        opts={autocomplete: "off", "phx-target": "#smart_input"}
+        class="flex flex-col flex-1 min-h-0"
+      >
+        <Bonfire.UI.Common.InputControlsLive
+          smart_input_opts={@smart_input_opts}
+          thread_mode={@thread_mode}
+          reply_to_id={uid(@reply_to_id)}
+          context_id={@context_id}
+          create_object_type={@create_object_type}
+          to_boundaries={@to_boundaries}
+          to_circles={@to_circles}
+          exclude_circles={@exclude_circles}
+          showing_within={@showing_within}
+          uploads={false}
+          uploaded_files={@uploaded_files}
+          submit_label={l("Add task")}
+        >
+          {!-- title and description on top, the description taking the free height so the chips sit just above the composer's own controls; each has its own phx-update="ignore" wrapper, as in the poll composer, since every keystroke's validate re-renders the composer, which resets any input that doesn't have focus --}
+          <div class="flex flex-1 min-h-0 flex-col px-4 pt-4">
+            {!-- `post[post_content][name]`, the field a post's title uses, since validate only enables the submit button for the content fields it knows --}
+            <Inputs for={:post_content}>
+              <Field name={:name}>
+                <Label class="sr-only">{l("Title")}</Label>
+                <div id="task_name_wrapper" phx-update="ignore">
+                  {!-- `!` because the unlayered `input[type="text"]` font size in bonfire_ui_common's app.css beats Tailwind's utilities --}
+                  <TextInput
+                    opts={required: true, placeholder: l("Task title")}
+                    class="w-full border-0 bg-transparent p-0 !text-xl font-medium placeholder:font-normal placeholder:text-base-content/40 focus:outline-none focus:ring-0"
+                  />
+                </div>
+              </Field>
+            </Inputs>
+            <Field name={:note} class="mt-2 flex flex-1 min-h-0 flex-col">
+              <Label class="sr-only">{l("Description")}</Label>
+              <div id="task_note_wrapper" phx-update="ignore" class="flex flex-1 min-h-0">
+                <TextArea
+                  opts={placeholder: l("Add a description…")}
+                  class="min-h-20 w-full flex-1 resize-none border-0 bg-transparent p-0 text-base-content/80 placeholder:text-base-content/40 focus:outline-none focus:ring-0"
+                />
+              </div>
+            </Field>
+            {!-- the chips' choices, from this component's assigns; left empty, the task goes to the Inbox, undated --}
+            <input type="hidden" name="post[owner_id]" value={e(@task_owner, :id, "")}>
+            <input type="hidden" name="post[due]" value={@task_due && Date.to_iso8601(@task_due)}>
+            {!-- plain pills rather than `.btn`, whose unlayered bold and padding (bonfire_ui_common's app.css) would make them louder than the title --}
+            <div class="flex flex-wrap items-center gap-1.5 py-3">
+              <Dropdown
+                id="task_owner_menu"
+                position="top-start"
+                menu={false}
+                trigger_class={
+                  "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-colors hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  "border-base-content/25 text-base-content": @task_owner,
+                  "border-base-content/15 text-base-content/70": !@task_owner
+                }
+                panel_class="!w-64 flex flex-col gap-0.5 p-1.5"
+                label={if @task_owner, do: l("Owner: %{name}", name: @task_owner.name), else: l("Set an owner")}
+              >
+                <:trigger>
+                  {#if @task_owner}
+                    <img src={@task_owner.avatar} alt="" class="size-4 rounded-full object-cover">
+                  {#else}
+                    <#Icon iconify="ph:user-circle" class="size-4" />
+                  {/if}
+                  <span data-role="task_owner_chip">{if @task_owner, do: @task_owner.name, else: l("Owner")}</span>
+                </:trigger>
+                {!-- the browser filters the members as you type (the `<datalist>` above), with no JS; Enter picks --}
+                <input
+                  form="task_owner_search"
+                  name="owner"
+                  list="task_owner_options"
+                  autocomplete="off"
+                  placeholder={l("Assign to…")}
+                  aria-label={l("Search members")}
+                  class="input input-ghost input-sm mb-1 w-full"
+                />
+                <div class="flex max-h-64 flex-col gap-0.5 overflow-y-auto">
+                  {#for member <- @members}
+                    <button
+                      type="button"
+                      id={"task_owner_option_#{member.id}"}
+                      phx-click="Bonfire.Divlab:pick_task_owner"
+                      phx-value-owner={member.username}
+                      phx-target={@myself}
+                      class="btn btn-ghost btn-sm justify-start gap-2 !font-normal"
+                    >
+                      <img src={member.avatar} alt="" class="size-5 rounded-full object-cover">
+                      <span class="truncate">{member.name}</span>
+                      <span :if={member.id == current_user_id(@__context__)} class="text-base-content/60">{l("you")}</span>
+                    </button>
+                  {/for}
+                </div>
+                <button
+                  :if={@task_owner}
+                  type="button"
+                  id="task_owner_clear"
+                  phx-click="Bonfire.Divlab:clear_task_owner"
+                  phx-target={@myself}
+                  class="btn btn-ghost btn-sm mt-1 justify-start border-t border-base-content/10 !font-normal text-base-content/70"
+                >{l("Nobody, Inbox")}</button>
+              </Dropdown>
+              <Dropdown
+                id="task_due_menu"
+                position="top-start"
+                menu={false}
+                trigger_class={
+                  "inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-sm transition-colors hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  "border-base-content/25 text-base-content": @task_due,
+                  "border-base-content/15 text-base-content/70": !@task_due
+                }
+                panel_class="!w-56 flex flex-col gap-0.5 p-1.5"
+                label={if @task_due, do: l("Date: %{date}", date: TaskRowLive.due_label(@task_due)), else: l("Set a date")}
+              >
+                <:trigger>
+                  <#Icon iconify="ph:calendar-blank" class="size-4" />
+                  <span data-role="task_due_chip">{if @task_due, do: TaskRowLive.due_label(@task_due), else: l("Due date")}</span>
+                </:trigger>
+                {#for {key, label, date} <- TaskRowLive.quick_dates()}
+                  <button
+                    type="button"
+                    id={"task_due_option_#{key}"}
+                    phx-click="Bonfire.Divlab:pick_task_due"
+                    phx-value-due={Date.to_iso8601(date)}
+                    phx-target={@myself}
+                    class="btn btn-ghost btn-sm justify-between !font-normal"
+                  >
+                    {label}
+                    <span class="text-base-content/60">{Bonfire.Common.DatesTimes.format_date(date, format: "EEE d")}</span>
+                  </button>
+                {/for}
+                <label for="task_due_input" class="sr-only">{l("Pick a date")}</label>
+                <input
+                  id="task_due_input"
+                  form="task_due_pick"
+                  type="date"
+                  name="due"
+                  class="input input-bordered input-sm mt-1 w-full"
+                />
+                <button
+                  :if={@task_due}
+                  type="button"
+                  id="task_due_clear"
+                  phx-click="Bonfire.Divlab:clear_task_due"
+                  phx-target={@myself}
+                  class="btn btn-ghost btn-sm justify-start !font-normal text-base-content/70"
+                >{l("No date")}</button>
+              </Dropdown>
+            </div>
+          </div>
+        </Bonfire.UI.Common.InputControlsLive>
+      </Form>
+    </div>
+  {#else}
+    <p id="smart_input_task_unavailable" class="p-4 text-sm text-muted">
+      {l("Tasks are added from the Tasks page of a group that has turned them on.")}
+    </p>
+  {/if}
+</div>

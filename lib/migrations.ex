@@ -1,4 +1,4 @@
-defmodule Bonfire.ExtensionTemplate.Migrations do
+defmodule Bonfire.Divlab.Migrations do
   @moduledoc false
   use Ecto.Migration
 

@@ -1,0 +1,17 @@
+<form id="group_tasks_form" phx-change="Bonfire.Divlab:set_tasks_enabled">
+  <input type="hidden" name="enabled" value="false">
+  <div class="flex items-start gap-3">
+    <input
+      id="group_tasks_enabled"
+      type="checkbox"
+      name="enabled"
+      value="true"
+      class="toggle mt-1"
+      checked={@enabled?}
+    />
+    <div>
+      <label for="group_tasks_enabled">{l("Tasks")}</label>
+      <p class="text-sm text-muted">{l("A shared task list for this group's members")}</p>
+    </div>
+  </div>
+</form>

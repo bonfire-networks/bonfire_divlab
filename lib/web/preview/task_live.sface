@@ -1,0 +1,32 @@
+<div
+  data-role="task_preview"
+  data-done={@done?}
+  class="flex items-start gap-3 rounded-box border border-divider bg-base-100 p-3"
+>
+  {#if @done?}
+    <#Icon iconify="ph:check-circle-fill" class="mt-0.5 size-5 shrink-0 text-success" />
+  {#else}
+    <#Icon iconify="ph:circle" class="mt-0.5 size-5 shrink-0 text-muted" />
+  {/if}
+  <div class="min-w-0 flex-1">
+    <p class={"break-words font-medium", "line-through text-muted": @done?}>{e(@object, :name, nil)}</p>
+    {!-- plain text: the composer doesn't render the description as markdown yet --}
+    <p :if={e(@object, :note, nil)} class="mt-1 whitespace-pre-line break-words text-sm text-muted">{e(@object, :note, nil)}</p>
+    <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted">
+      <span :if={TaskRowLive.owner_name(@object)} data-role="task_owner" class="flex items-center gap-1.5">
+        <#Icon iconify="ph:user" class="size-4 shrink-0" />
+        {TaskRowLive.owner_name(@object)}
+      </span>
+      <time
+        :if={e(@object, :due, nil)}
+        data-role="task_due"
+        data-overdue={TaskRowLive.overdue?(@object)}
+        datetime={DateTime.to_iso8601(@object.due)}
+        class={"text-error": TaskRowLive.overdue?(@object)}
+      >{Bonfire.Common.DatesTimes.format_date(@object.due)}</time>
+      <LinkLive :if={@tasks_path} to={@tasks_path} class="ml-auto text-primary hover:underline">
+        {l("Open in Tasks")}
+      </LinkLive>
+    </div>
+  </div>
+</div>
