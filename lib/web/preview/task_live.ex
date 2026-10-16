@@ -13,7 +13,8 @@ defmodule Bonfire.Divlab.Web.Preview.TaskLive do
   prop is_remote, :boolean, default: false
   prop thread_title, :any, default: nil
   prop hide_actions, :boolean, default: false
-  prop activity_inception, :boolean, default: false
+  # `ActivityLive` passes what the activity is shown within (eg. `"preview"`), not a boolean
+  prop activity_inception, :any, default: nil
   prop permalink, :string, default: nil
 
   @doc "What the feed preloads for each task (`Bonfire.Social.Feeds.LiveHandler.object_preloads/1`): its creator, whom the activity's author line shows, and its owner."
@@ -23,9 +24,40 @@ defmodule Bonfire.Divlab.Web.Preview.TaskLive do
     assigns
     |> assign(
       done?: e(assigns.object, :finished, false) == true,
+      # above a reply or inside a quote the task is context, so only its title shows; a thread (and the preview modal's) shows it in full
+      compact?:
+        !!assigns.activity_inception and !assigns.viewing_main_object and
+          assigns.showing_within != :thread,
       tasks_path: tasks_path(assigns.object)
     )
     |> render_sface()
+  end
+
+  @doc """
+  What the card says about who does `task`: you, its owner, or nobody yet. A finished task with no owner says nothing.
+
+      iex> Bonfire.Divlab.Web.Preview.TaskLive.owner_label(%{provider: %{id: "u1", profile: %{name: "Mayel"}}}, "u2")
+      "Assigned to Mayel"
+
+      iex> Bonfire.Divlab.Web.Preview.TaskLive.owner_label(%{provider: %{id: "u1", profile: %{name: "Mayel"}}}, "u1")
+      "Assigned to you"
+
+      iex> Bonfire.Divlab.Web.Preview.TaskLive.owner_label(%{provider: nil, finished: false}, "u1")
+      "Unassigned"
+
+      iex> Bonfire.Divlab.Web.Preview.TaskLive.owner_label(%{provider: nil, finished: true}, "u1")
+      nil
+  """
+  def owner_label(task, viewer_id) do
+    case TaskRowLive.owner_name(task) do
+      nil ->
+        if e(task, :finished, false) != true, do: l("Unassigned")
+
+      name ->
+        if id(task.provider) == viewer_id,
+          do: l("Assigned to you"),
+          else: l("Assigned to %{name}", name: name)
+    end
   end
 
   # `path/1` caches the pointer lookup, so a feed of tasks from one group looks the group up once

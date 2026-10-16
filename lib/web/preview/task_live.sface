@@ -1,32 +1,70 @@
+{!-- in feeds a title reads at the size of a post's text (`.prose-bonfire`: 16px at 1.4), on the task's own page at a heading's --}
 <div
   data-role="task_preview"
   data-done={@done?}
-  class="flex items-start gap-3 rounded-box border border-divider bg-base-100 p-3"
+  class={
+    "flex items-start gap-2.5",
+    "text-[1rem] leading-[1.4]": !@viewing_main_object,
+    "text-xl": @viewing_main_object
+  }
 >
-  {#if @done?}
-    <#Icon iconify="ph:check-circle-fill" class="mt-0.5 size-5 shrink-0 text-success" />
-  {#else}
-    <#Icon iconify="ph:circle" class="mt-0.5 size-5 shrink-0 text-muted" />
-  {/if}
+  {!-- a status mark, not a control. Outlined even when done: a filled check beside an avatar reads as a verified badge. `1lh` centres it on the title's first line --}
+  <span class="flex h-[1lh] shrink-0 items-center" aria-hidden="true">
+    <span class={
+      "grid place-items-center rounded-full border-[1.5px]",
+      "size-4": !@viewing_main_object,
+      "size-5": @viewing_main_object,
+      "border-base-content/60": !@done?,
+      "border-base-content/40 text-base-content/60": @done?
+    }>
+      {#if @done?}
+        <#Icon iconify="ph:check-bold" class="size-2.5" />
+      {/if}
+    </span>
+  </span>
   <div class="min-w-0 flex-1">
-    <p class={"break-words font-medium", "line-through text-muted": @done?}>{e(@object, :name, nil)}</p>
-    {!-- plain text: the composer doesn't render the description as markdown yet --}
-    <p :if={e(@object, :note, nil)} class="mt-1 whitespace-pre-line break-words text-sm text-muted">{e(@object, :note, nil)}</p>
-    <div class="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted">
-      <span :if={TaskRowLive.owner_name(@object)} data-role="task_owner" class="flex items-center gap-1.5">
-        <#Icon iconify="ph:user" class="size-4 shrink-0" />
-        {TaskRowLive.owner_name(@object)}
-      </span>
-      <time
-        :if={e(@object, :due, nil)}
-        data-role="task_due"
-        data-overdue={TaskRowLive.overdue?(@object)}
-        datetime={DateTime.to_iso8601(@object.due)}
-        class={"text-error": TaskRowLive.overdue?(@object)}
-      >{Bonfire.Common.DatesTimes.format_date(@object.due)}</time>
-      <LinkLive :if={@tasks_path} to={@tasks_path} class="ml-auto text-primary hover:underline">
-        {l("Open in Tasks")}
-      </LinkLive>
-    </div>
+    <p class={
+      "font-medium",
+      "truncate": @compact?,
+      "break-words": !@compact?,
+      "text-base-content/60 line-through": @done?
+    }>
+      <span class="sr-only">{if @done?, do: l("Done:"), else: l("Open:")}</span>
+      {e(@object, :name, nil)}
+    </p>
+    {#if !@compact?}
+      {!-- plain text: the composer doesn't render the description as markdown yet --}
+      <p
+        :if={e(@object, :note, nil)}
+        class={
+          "mt-1 whitespace-pre-line break-words",
+          "text-sm line-clamp-3": !@viewing_main_object,
+          "text-base leading-[1.5]": @viewing_main_object,
+          "text-base-content/70": !@done?,
+          "text-base-content/60": @done?
+        }
+      >{e(@object, :note, nil)}</p>
+      {!-- `·` between whichever parts show; inline-block keeps the link's underline off it --}
+      <div class="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 text-sm text-base-content/70 [&>*+*]:before:mr-1.5 [&>*+*]:before:inline-block [&>*+*]:before:content-['·']">
+        {#case owner_label(@object, current_user_id(@__context__))}
+          {#match nil}
+          {#match label}
+            <span data-role={if TaskRowLive.owner_name(@object), do: "task_owner", else: "task_unassigned"}>{label}</span>
+        {/case}
+        <time
+          :if={e(@object, :due, nil)}
+          data-role="task_due"
+          data-overdue={TaskRowLive.overdue?(@object)}
+          datetime={DateTime.to_iso8601(@object.due)}
+          title={Bonfire.Common.DatesTimes.format_date(@object.due)}
+          class={"tabular-nums", "text-error": TaskRowLive.overdue?(@object)}
+        >{l("Due %{date}", date: TaskRowLive.due_label(@object.due))}</time>
+        <LinkLive
+          :if={@tasks_path}
+          to={@tasks_path}
+          class="underline decoration-base-content/30 underline-offset-2 hover:text-base-content hover:decoration-current"
+        >{l("Open in Tasks")}</LinkLive>
+      </div>
+    {/if}
   </div>
 </div>
