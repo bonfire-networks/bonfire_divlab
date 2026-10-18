@@ -24,6 +24,7 @@ defmodule Bonfire.Divlab.Web.CreateTaskLive do
   data group, :any, default: nil
   data members, :list, default: []
   data loaded_context_id, :any, default: nil
+
   # the owner and date chips' choices, held here rather than in inputs, since the composer re-renders on every keystroke (see `Bonfire.Divlab.LiveHandler`'s `pick_task_*` events)
   data task_owner, :any, default: nil
   data task_due, :any, default: nil

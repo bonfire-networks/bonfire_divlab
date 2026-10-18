@@ -6,7 +6,10 @@ defmodule Bonfire.Divlab.Web.GroupTasksSettingsLive do
 
   def render(assigns) do
     assigns
-    |> assign(:enabled?, Bonfire.Divlab.Tasks.enabled_for?(assigns.category, assigns[:__context__]))
+    |> assign(
+      :enabled?,
+      Bonfire.Divlab.Tasks.enabled_for?(assigns.category, assigns[:__context__])
+    )
     |> render_sface()
   end
 end

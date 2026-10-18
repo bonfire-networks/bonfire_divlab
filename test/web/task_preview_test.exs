@@ -38,9 +38,7 @@ defmodule Bonfire.Divlab.Web.TaskPreviewTest do
     |> assert_has("[data-role=task_preview]", text: "About the flyers")
     |> assert_has("[data-role=task_preview] [data-role=task_owner]", text: mayel.profile.name)
     |> assert_has("[data-role=task_preview] [data-role=task_due]")
-    |> assert_has(
-      "[data-role=task_preview] a[href='#{Bonfire.Common.URIs.path(group)}/tasks']"
-    )
+    |> assert_has("[data-role=task_preview] a[href='#{Bonfire.Common.URIs.path(group)}/tasks']")
   end
 
   test "a finished task shows as done", %{account: account, ivan: ivan, group: group, path: path} do

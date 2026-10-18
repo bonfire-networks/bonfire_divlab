@@ -20,7 +20,14 @@ defmodule Bonfire.Divlab.Web.TaskRowLive do
   def preview_assigns(task) do
     task_id = id(task)
 
-    Bonfire.UI.Social.ActivityLive.thread_preview_modal_assigns(task_id, task_id, task_id, nil, nil, nil)
+    Bonfire.UI.Social.ActivityLive.thread_preview_modal_assigns(
+      task_id,
+      task_id,
+      task_id,
+      nil,
+      nil,
+      nil
+    )
     |> Keyword.merge(current_url: "/discussion/#{task_id}", cw: false)
   end
 
@@ -51,12 +58,23 @@ defmodule Bonfire.Divlab.Web.TaskRowLive do
 
   def due_label(%Date{} = date, today) do
     case Date.diff(date, today) do
-      0 -> l("Today")
-      1 -> l("Tomorrow")
-      -1 -> l("Yesterday")
-      days when days in 2..6 -> Bonfire.Common.DatesTimes.format_date(date, format: "EEE")
-      _ when date.year == today.year -> Bonfire.Common.DatesTimes.format_date(date, format: "MMM d")
-      _ -> Bonfire.Common.DatesTimes.format_date(date)
+      0 ->
+        l("Today")
+
+      1 ->
+        l("Tomorrow")
+
+      -1 ->
+        l("Yesterday")
+
+      days when days in 2..6 ->
+        Bonfire.Common.DatesTimes.format_date(date, format: "EEE")
+
+      _ when date.year == today.year ->
+        Bonfire.Common.DatesTimes.format_date(date, format: "MMM d")
+
+      _ ->
+        Bonfire.Common.DatesTimes.format_date(date)
     end
   end
 
@@ -102,6 +120,5 @@ defmodule Bonfire.Divlab.Web.TaskRowLive do
 
   @doc "The name the row and the feed card show for `task`'s owner, from its preloaded provider."
   def owner_name(task),
-    do:
-      e(task, :provider, :profile, :name, nil) || e(task, :provider, :character, :username, nil)
+    do: e(task, :provider, :profile, :name, nil) || e(task, :provider, :character, :username, nil)
 end

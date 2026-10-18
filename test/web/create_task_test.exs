@@ -49,7 +49,9 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
       assert has_element?(composer, "#submit_btn[disabled]")
 
       composer
-      |> form("#smart_input_task_content form", post: %{post_content: %{name: "Water the plants"}})
+      |> form("#smart_input_task_content form",
+        post: %{post_content: %{name: "Water the plants"}}
+      )
       |> render_change()
 
       assert has_element?(composer, "#submit_btn:not([disabled])")
@@ -235,7 +237,10 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
     |> visit(path)
     |> PhoenixTest.unwrap(fn view ->
       composer = composer_view(view)
-      composer |> element("#composer_type_chooser a[phx-click*='CreateTaskLive']") |> render_click()
+
+      composer
+      |> element("#composer_type_chooser a[phx-click*='CreateTaskLive']")
+      |> render_click()
 
       assert has_element?(composer, "#smart_input_task_unavailable")
       refute has_element?(composer, "#smart_input_task_content form")

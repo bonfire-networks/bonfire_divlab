@@ -55,7 +55,10 @@
   >
     {@task.name}
     {#if @task.note}
-      <#Icon iconify="ph:text-align-left" class="ml-1 inline size-3.5 align-[-2px] text-base-content/50" />
+      <#Icon
+        iconify="ph:text-align-left"
+        class="ml-1 inline size-3.5 align-[-2px] text-base-content/50"
+      />
     {/if}
   </p>
 

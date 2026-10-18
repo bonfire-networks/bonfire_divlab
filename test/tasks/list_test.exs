@@ -44,7 +44,12 @@ defmodule Bonfire.Divlab.Tasks.ListTest do
 
   test "Waiting on lists what I asked someone else to do, soonest first",
        %{me: me, other: other, group: group} do
-    task!(me, group, "chase next week", receiver_id: me.id, provider_id: other.id, due: in_days(7))
+    task!(me, group, "chase next week",
+      receiver_id: me.id,
+      provider_id: other.id,
+      due: in_days(7)
+    )
+
     task!(me, group, "chase tomorrow", receiver_id: me.id, provider_id: other.id, due: in_days(1))
     task!(me, group, "my own", receiver_id: me.id, provider_id: me.id)
     task!(me, group, "nobody yet", receiver_id: me.id)

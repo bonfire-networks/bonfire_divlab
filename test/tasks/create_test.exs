@@ -57,7 +57,11 @@ defmodule Bonfire.Divlab.Tasks.CreateTest do
       assert message =~ "group_not_found_or_not_permitted"
     end
 
-    test "refuses a group that hasn't turned Tasks on", %{owner: owner, member: member, group: group} do
+    test "refuses a group that hasn't turned Tasks on", %{
+      owner: owner,
+      member: member,
+      group: group
+    } do
       {:ok, _} = Tasks.set_enabled(group, false, current_user: owner)
 
       assert {:error, message} = create_task(member, group)
@@ -104,7 +108,10 @@ defmodule Bonfire.Divlab.Tasks.CreateTest do
       assert task.receiver_id == member.id
     end
 
-    test "sets no receiver on a task the creator gives themselves", %{member: member, group: group} do
+    test "sets no receiver on a task the creator gives themselves", %{
+      member: member,
+      group: group
+    } do
       {:ok, task} = create_task(member, group, "members:private", %{provider_id: member.id})
 
       assert is_nil(task.receiver_id)
@@ -178,7 +185,8 @@ defmodule Bonfire.Divlab.Tasks.CreateTest do
       {:ok, task_boost} = Boosts.get(group, task, skip_boundary_check: true)
       {:ok, post_boost} = Boosts.get(group, post, skip_boundary_check: true)
 
-      assert {:ok, _} = ActivityPub.Object.get_cached(pointer: post), "control: the post federates"
+      assert {:ok, _} = ActivityPub.Object.get_cached(pointer: post),
+             "control: the post federates"
 
       assert {:ok, _} = ActivityPub.Object.get_cached(pointer: post_boost),
              "control: the group's boost of the post is announced"

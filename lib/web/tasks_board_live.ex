@@ -77,7 +77,8 @@ defmodule Bonfire.Divlab.Web.TasksBoardLive do
       |> Map.new(&{&1.id, &1})
 
     assign(socket,
-      lists: Map.new(lists, fn {view, view_tasks} -> {view, Enum.map(view_tasks, &tasks[&1.id])} end),
+      lists:
+        Map.new(lists, fn {view, view_tasks} -> {view, Enum.map(view_tasks, &tasks[&1.id])} end),
       deletable: for({id, task} <- tasks, Tasks.may_delete?(me, task), into: MapSet.new(), do: id)
     )
   end

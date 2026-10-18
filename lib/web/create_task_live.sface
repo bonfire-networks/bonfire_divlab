@@ -6,13 +6,13 @@
       phx-submit="Bonfire.Divlab:pick_task_owner"
       phx-target={@myself}
       class="hidden"
-    ></form>
+    />
     <form
       id="task_due_pick"
       phx-change="Bonfire.Divlab:pick_task_due"
       phx-target={@myself}
       class="hidden"
-    ></form>
+    />
     <datalist id="task_owner_options">
       <option :for={member <- @members} value={member.username}>{member.name}</option>
     </datalist>
@@ -133,7 +133,9 @@
                   "border-base-content/15 text-base-content/70": !@task_due
                 }
                 panel_class="!w-56 flex flex-col gap-0.5 p-1.5"
-                label={if @task_due, do: l("Date: %{date}", date: TaskRowLive.due_label(@task_due)), else: l("Set a date")}
+                label={if @task_due,
+                  do: l("Date: %{date}", date: TaskRowLive.due_label(@task_due)),
+                  else: l("Set a date")}
               >
                 <:trigger>
                   <#Icon iconify="ph:calendar-blank" class="size-4" />

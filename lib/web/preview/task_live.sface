@@ -25,7 +25,7 @@
   <div class="min-w-0 flex-1">
     <p class={
       "font-medium",
-      "truncate": @compact?,
+      truncate: @compact?,
       "break-words": !@compact?,
       "text-base-content/60 line-through": @done?
     }>
