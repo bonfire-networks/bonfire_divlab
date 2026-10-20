@@ -8,13 +8,13 @@ defmodule Bonfire.Divlab.Web.GroupTasksSettingTest do
   alias Bonfire.Divlab.Tasks
 
   setup do
-    # the composer's types are cached app-wide (`ExtensionBehaviour.apply_modules_cached/2`), and filling that cache while divlab is switched off in this process would leave the task type out of every later test
-    on_exit(fn ->
-      Bonfire.Common.Cache.reset({Bonfire.Common.ExtensionBehaviour, :apply_modules}, [
-        Bonfire.UI.Common.SmartInputModule.modules(),
-        :smart_input_module
-      ])
-    end)
+    # Disabled: this reset is no longer needed. The composer's types are cached app-wide (`ExtensionBehaviour.apply_modules_cached/2`) as what the modules declare, enabled or not, and the smart input handler leaves out the disabled ones when it reads them. Filling that cache while divlab is switched off in this process used to leave the task type out of every later test.
+    # on_exit(fn ->
+    #   Bonfire.Common.Cache.reset({Bonfire.Common.ExtensionBehaviour, :apply_modules}, [
+    #     Bonfire.UI.Common.SmartInputModule.modules(),
+    #     :smart_input_module
+    #   ])
+    # end)
 
     account = fake_account!()
     owner = fake_user!(account)
