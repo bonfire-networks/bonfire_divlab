@@ -23,8 +23,8 @@ defmodule Bonfire.Divlab.Tasks.CreateTest do
         default_content_visibility: "members:private"
       })
 
-    {:ok, _} = Categories.add_member(owner, group, member)
-    {:ok, _} = Categories.add_member(owner, group, provider)
+    {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
+    {:ok, _} = Categories.add_member(owner, group, provider, skip_boundary_check: true)
     {:ok, _} = Tasks.set_enabled(group, true, current_user: owner)
 
     %{owner: owner, member: member, provider: provider, outsider: outsider, group: group}
@@ -165,7 +165,7 @@ defmodule Bonfire.Divlab.Tasks.CreateTest do
           default_content_visibility: "public"
         })
 
-      {:ok, _} = Categories.add_member(owner, group, member)
+      {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
       {:ok, _} = Tasks.set_enabled(group, true, current_user: owner)
       %{public_group: group}
     end

@@ -62,7 +62,7 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
   test "the owner menu lists the group's members and nobody else",
        %{account: account, me: me, group: group, path: path} do
     member = fake_user!(account)
-    {:ok, _} = Categories.add_member(me, group, member)
+    {:ok, _} = Categories.add_member(me, group, member, skip_boundary_check: true)
     outsider = fake_user!(account)
 
     conn(user: me, account: account)

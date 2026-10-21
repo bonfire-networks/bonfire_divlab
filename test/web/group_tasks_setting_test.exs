@@ -42,7 +42,7 @@ defmodule Bonfire.Divlab.Web.GroupTasksSettingTest do
     test "is hidden from a member who can't configure the group",
          %{account: account, owner: owner, group: group, path: path} do
       member = fake_user!(account)
-      {:ok, _} = Categories.add_member(owner, group, member)
+      {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
 
       conn(user: member, account: account)
       |> visit(path <> "/settings")
@@ -79,7 +79,7 @@ defmodule Bonfire.Divlab.Web.GroupTasksSettingTest do
     test "doesn't offer the switch to a member who can't configure the group",
          %{account: account, owner: owner, group: group, path: path} do
       member = fake_user!(account)
-      {:ok, _} = Categories.add_member(owner, group, member)
+      {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
 
       conn(user: member, account: account)
       |> visit(path <> "/settings/tasks")

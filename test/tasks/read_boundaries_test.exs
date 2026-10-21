@@ -43,7 +43,7 @@ defmodule Bonfire.Divlab.Tasks.ReadBoundariesTest do
         default_content_visibility: "members:private"
       })
 
-    {:ok, _} = Categories.add_member(owner, group, member)
+    {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
     {:ok, _} = Tasks.set_enabled(group, true, current_user: owner)
 
     {:ok, task} =

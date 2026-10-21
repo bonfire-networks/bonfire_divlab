@@ -13,7 +13,8 @@ defmodule Bonfire.Divlab.TasksFixtures do
         default_content_visibility: "members:private"
       })
 
-    for member <- members, do: {:ok, _} = Categories.add_member(owner, group, member)
+    for member <- members,
+        do: {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
     group
   end
 
