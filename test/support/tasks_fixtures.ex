@@ -15,6 +15,7 @@ defmodule Bonfire.Divlab.TasksFixtures do
 
     for member <- members,
         do: {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
+
     group
   end
 
