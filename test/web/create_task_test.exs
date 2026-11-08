@@ -233,11 +233,8 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
        %{account: account, me: me, group: group, path: path} do
     {:ok, _} = Tasks.set_enabled(group, false, current_user: me)
 
-    # the tray offers Task only once the composer is in a group, so open it from the group's page
     conn(user: me, account: account)
     |> visit(path)
-    |> wait_async()
-    |> click_button("#inline_composer_placeholder_open", "Start a discussion…")
     |> PhoenixTest.unwrap(fn view ->
       composer = composer_view(view)
 

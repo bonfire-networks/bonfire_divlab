@@ -1,6 +1,6 @@
 defmodule Bonfire.Divlab.Web.CreateTaskLive do
   @moduledoc """
-  The composer's task type. The composer's tray offers it only in a group (`smart_input_available?/1`); in a group with Tasks off this explains where tasks are made instead of offering a form (D7a in tasks-v1.md).
+  The composer's task type. The composer lists every type everywhere, so outside a group with Tasks on this explains where tasks are made instead of offering a form (D7a in tasks-v1.md).
   """
   use Bonfire.UI.Common.Web, :stateful_component
   alias Surface.Components.Form
@@ -11,7 +11,6 @@ defmodule Bonfire.Divlab.Web.CreateTaskLive do
   alias Bonfire.Divlab.Web.TaskRowLive
 
   prop context_id, :string, default: nil
-  prop context_group, :any, default: nil
   prop create_object_type, :any, default: nil
   prop to_boundaries, :any, default: nil
   prop to_circles, :list, default: []
@@ -34,10 +33,6 @@ defmodule Bonfire.Divlab.Web.CreateTaskLive do
   def smart_input_module, do: [:task, ValueFlows.Planning.Intent]
   def smart_input_icon(_), do: "ph:check-square"
   def smart_input_label(_), do: l("Task")
-
-  # no query: the tray checks on every render; whether the group has the feature on is checked when the form opens (`update/2`)
-  def smart_input_available?(context),
-    do: Bonfire.UI.Common.SmartInputLive.group_context?(context[:context_group])
 
   # the composer updates its active type on every keystroke's validate, so the group is only looked up when the context changes
   def update(assigns, socket) do
