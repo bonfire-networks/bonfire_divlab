@@ -30,6 +30,7 @@
           thread_mode={@thread_mode}
           reply_to_id={uid(@reply_to_id)}
           context_id={@context_id}
+          context_group={@context_group}
           create_object_type={@create_object_type}
           to_boundaries={@to_boundaries}
           to_circles={@to_circles}
@@ -58,6 +59,7 @@
               <Label class="sr-only">{l("Description")}</Label>
               <div id="task_note_wrapper" phx-update="ignore" class="flex flex-1 min-h-0">
                 <TextArea
+                  value={e(@smart_input_opts, :text, nil)}
                   opts={placeholder: l("Add a description…")}
                   class="min-h-20 w-full flex-1 resize-none border-0 bg-transparent p-0 text-base-content/80 placeholder:text-base-content/40 focus:outline-none focus:ring-0"
                 />
@@ -180,5 +182,12 @@
     <p id="smart_input_task_unavailable" class="p-4 text-sm text-muted">
       {l("Tasks are added from the Tasks page of a group that has turned them on.")}
     </p>
+    {!-- the type tray is in the form's toolbar, absent here: the way back to a note --}
+    <button
+      type="button"
+      phx-click={Bonfire.UI.Common.SmartInput.LiveHandler.open_base_type(@smart_input_opts)}
+      phx-target="#smart_input"
+      class="mx-4 text-sm underline underline-offset-2 hover:text-base-content focus-visible:ring-2 focus-visible:ring-primary"
+    >{l("Write a post instead")}</button>
   {/if}
 </div>

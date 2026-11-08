@@ -26,7 +26,7 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
     |> click_button("#group_tasks_new", "New task")
     |> PhoenixTest.unwrap(fn view ->
       composer = composer_view(view)
-      assert has_element?(composer, "#composer_type_chooser_trigger", "Create task")
+      assert has_element?(composer, "#composer_type_tray [aria-pressed=true]", "Task")
 
       composer
       |> form("#smart_input_task_content form",
@@ -233,13 +233,16 @@ defmodule Bonfire.Divlab.Web.CreateTaskTest do
        %{account: account, me: me, group: group, path: path} do
     {:ok, _} = Tasks.set_enabled(group, false, current_user: me)
 
+    # the tray offers Task only once the composer is in a group, so open it from the group's page
     conn(user: me, account: account)
     |> visit(path)
+    |> wait_async()
+    |> click_button("#inline_composer_placeholder_open", "Start a discussion…")
     |> PhoenixTest.unwrap(fn view ->
       composer = composer_view(view)
 
       composer
-      |> element("#composer_type_chooser a[phx-click*='CreateTaskLive']")
+      |> element("#composer_type_tray_rail button[phx-click*='CreateTaskLive']")
       |> render_click()
 
       assert has_element?(composer, "#smart_input_task_unavailable")
