@@ -46,12 +46,12 @@ defmodule Bonfire.Divlab.Tasks.ReadBoundariesTest do
     {:ok, _} = Categories.add_member(owner, group, member, skip_boundary_check: true)
     {:ok, _} = Tasks.set_enabled(group, true, current_user: owner)
 
-    {:ok, task} =
-      Tasks.create(
+    {:ok, [task]} =
+      Tasks.add_items(["Water the plants"],
         current_user: member,
         context_id: group.id,
         boundary: "members:private",
-        task_attrs: %{name: "Water the plants"}
+        list_id: nil
       )
 
     %{member: member, outsider: outsider, task: task}

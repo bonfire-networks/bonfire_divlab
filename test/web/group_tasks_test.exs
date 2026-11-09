@@ -29,11 +29,11 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
          %{account: account, ivan: ivan, mayel: mayel, group: group, path: path} do
       task!(mayel, group, "Water the plants")
       task!(ivan, group, "Fix the gate", provider_id: ivan.id)
-      task!(ivan, group, "Call the printer", provider_id: mayel.id, due: in_days(2))
+      task!(ivan, group, "Call the printer", provider_id: mayel.id)
 
       session = conn(user: ivan, account: account) |> visit(path <> "/inbox")
 
-      for tab <- ~w(inbox mine waiting due_soon),
+      for tab <- ~w(inbox mine waiting),
           do: assert_has(session, "#tasks_tab_#{tab} [data-role=count]", text: "1")
 
       session
@@ -48,32 +48,16 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
       |> assert_has("#tasks_list [data-role=task_owner]", text: mayel.profile.name)
     end
 
-    test "/tasks opens Mine", %{account: account, ivan: ivan, group: group, path: path} do
+    # `/tasks` now opens on Lists (tasks-v2 §1, lists_web_test.exs); Mine keeps its own path
+    test "Mine shows my open tasks only", %{account: account, ivan: ivan, group: group, path: path} do
       task!(ivan, group, "Fix the gate", provider_id: ivan.id)
       task!(ivan, group, "Water the plants")
 
       conn(user: ivan, account: account)
-      |> visit(path)
+      |> visit(path <> "/mine")
       |> assert_has("#tasks_tab_mine[aria-current=page]")
       |> assert_has("#tasks_list", text: "Fix the gate")
       |> refute_has("#tasks_list", text: "Water the plants")
-    end
-
-    test "Due soon shows overdue tasks and the next 7 days, soonest first, and nothing later",
-         %{account: account, ivan: ivan, group: group, path: path} do
-      task!(ivan, group, "Overdue", provider_id: ivan.id, due: in_days(-2))
-      task!(ivan, group, "This week", due: in_days(3))
-      task!(ivan, group, "Next month", due: in_days(30))
-      task!(ivan, group, "Undated")
-
-      conn(user: ivan, account: account)
-      |> visit(path <> "/due-soon")
-      |> assert_has("#tasks_list > li:nth-child(1)", text: "Overdue")
-      |> assert_has("#tasks_list > li:nth-child(1) [data-role=task_due][data-overdue]")
-      |> assert_has("#tasks_list > li:nth-child(2)", text: "This week")
-      |> refute_has("#tasks_list > li:nth-child(2) [data-role=task_due][data-overdue]")
-      |> refute_has("#tasks_list", text: "Next month")
-      |> refute_has("#tasks_list", text: "Undated")
     end
 
     test "an empty view says so", %{account: account, ivan: ivan, path: path} do
@@ -99,7 +83,7 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
 
     test "checking a task off takes it off every view",
          %{account: account, ivan: ivan, group: group, path: path} do
-      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id, due: in_days(1))
+      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id)
 
       session =
         conn(user: ivan, account: account)
@@ -107,54 +91,70 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
         |> click_button("#task_#{task.id}_done", "Mark done")
         |> refute_has("#task_#{task.id}")
 
-      for view <- ~w(inbox mine waiting due-soon),
+      for view <- ~w(inbox mine waiting),
           do: session |> visit("#{path}/#{view}") |> refute_has("#task_#{task.id}")
     end
 
+    # the owner menu is Bonfire's LiveSelect user picker (`TaskOwnerPickerLive`), driven as `group_settings_overview_test.exs` drives the add-person picker (`pick_owner/3` below)
     test "the owner menu gives the task to a member: it's in their Mine and my Waiting on",
          %{account: account, ivan: ivan, mayel: mayel, group: group, path: path} do
       task = task!(ivan, group, "Call the printer")
 
-      conn(user: ivan, account: account)
-      |> visit(path <> "/inbox")
-      |> click_button("#task_#{task.id}_owner_#{mayel.id}", mayel.profile.name)
-      |> refute_has("#task_#{task.id}")
+      {:ok, view, _html} = live(conn(user: ivan, account: account), path <> "/inbox")
 
+      pick_owner(view, task, mayel)
+
+      refute has_element?(view, "#task_#{task.id}")
       assert names(:mine, mayel, group) == ["Call the printer"]
       assert names(:waiting, ivan, group) == ["Call the printer"]
     end
 
-    test "the owner menu's search assigns the member typed in",
-         %{account: account, ivan: ivan, mayel: mayel, group: group, path: path} do
+    test "the owner menu's search offers only the group's members",
+         %{account: account, ivan: ivan} do
+      member = fake_user!(account, %{name: "zqownermember"})
+      _outsider = fake_user!(account, %{name: "zqowneroutsider"})
+      group = tasks_group!(ivan, [member])
       task = task!(ivan, group, "Call the printer")
 
-      conn(user: ivan, account: account)
-      |> visit(path <> "/inbox")
-      |> within("#task_#{task.id}_assign", fn session ->
-        session
-        |> fill_in("Owner", with: mayel.character.username)
-        |> submit()
-      end)
+      {:ok, view, _html} =
+        live(conn(user: ivan, account: account), "/&#{group.character.username}/tasks/inbox")
 
-      assert names(:mine, mayel, group) == ["Call the printer"]
+      ls_id =
+        live_select_simulate_search(
+          view,
+          "#task_#{task.id}_assign",
+          "zqowner",
+          "owner_#{task.id}_owner_live_select_component"
+        )
+
+      assert has_element?(view, "##{ls_id} li", "zqownermember"), "control: a member is offered"
+      refute has_element?(view, "##{ls_id} li", "zqowneroutsider"), "someone outside the group"
     end
 
-    test "the owner menu offers only members, and the server refuses anyone else",
+    test "the server refuses an owner who isn't a member",
          %{account: account, ivan: ivan, group: group, path: path} do
       task = task!(ivan, group, "Call the printer")
       outsider = fake_user!(account)
+      {:ok, view, _html} = live(conn(user: ivan, account: account), path <> "/inbox")
 
-      conn(user: ivan, account: account)
-      |> visit(path <> "/inbox")
-      |> refute_has("#task_#{task.id}_owner_#{outsider.id}")
-      |> within("#task_#{task.id}_assign", fn session ->
-        session
-        |> fill_in("Owner", with: outsider.character.username)
-        |> submit()
-      end)
-      |> assert_has("#task_#{task.id}")
+      pick_owner(view, task, outsider)
 
+      assert has_element?(view, "#task_#{task.id}")
       assert names(:inbox, ivan, group) == ["Call the printer"]
+    end
+
+    test "the owner menu is one list of members, shown before typing",
+         %{account: account, ivan: ivan, mayel: mayel, group: group, path: path} do
+      task = task!(ivan, group, "Call the printer")
+      ls_id = "owner_#{task.id}_owner_live_select_component"
+      {:ok, view, _html} = live(conn(user: ivan, account: account), path <> "/inbox")
+
+      refute has_element?(view, "datalist")
+
+      # LiveSelect draws its list once the input has focus, before anything is typed
+      view |> with_target("##{ls_id}") |> render_hook("focus", %{})
+
+      assert has_element?(view, "##{ls_id} li", mayel.profile.name)
     end
 
     test "Nobody puts an assigned task back in the Inbox",
@@ -167,49 +167,6 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
       |> refute_has("#task_#{task.id}")
 
       assert names(:inbox, ivan, group) == ["Call the printer"]
-    end
-
-    test "Tomorrow in the date menu puts an undated task in Due soon",
-         %{account: account, ivan: ivan, group: group, path: path} do
-      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id)
-
-      conn(user: ivan, account: account)
-      |> visit(path <> "/mine")
-      |> click_button("#task_#{task.id}_due_tomorrow", "Tomorrow")
-      |> click_link("#tasks_tab_due_soon", "Due soon")
-      |> assert_has("#task_#{task.id} [data-role=task_due]", text: "Tomorrow")
-    end
-
-    test "a date picked in the date menu sets it",
-         %{account: account, ivan: ivan, group: group, path: path} do
-      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id)
-      in_two_days = Date.utc_today() |> Date.add(2) |> Date.to_iso8601()
-
-      conn(user: ivan, account: account)
-      |> visit(path <> "/mine")
-      |> within("#task_#{task.id}_due_form", &fill_in(&1, "Pick a date", with: in_two_days))
-      |> click_link("#tasks_tab_due_soon", "Due soon")
-      |> assert_has("#task_#{task.id}")
-    end
-
-    test "clearing the date input takes the task off Due soon",
-         %{account: account, ivan: ivan, group: group, path: path} do
-      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id, due: in_days(1))
-
-      conn(user: ivan, account: account)
-      |> visit(path <> "/due-soon")
-      |> within("#task_#{task.id}_due_form", &fill_in(&1, "Pick a date", with: ""))
-      |> refute_has("#task_#{task.id}")
-    end
-
-    test "No date takes a task off Due soon",
-         %{account: account, ivan: ivan, group: group, path: path} do
-      task = task!(ivan, group, "Fix the gate", provider_id: ivan.id, due: in_days(1))
-
-      conn(user: ivan, account: account)
-      |> visit(path <> "/due-soon")
-      |> click_button("#task_#{task.id}_no_due", "No date")
-      |> refute_has("#task_#{task.id}")
     end
 
     test "Delete takes the task off every view and the group's timeline",
@@ -288,5 +245,17 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
       |> refute_has("#group_tasks")
       |> refute_has("body", text: "Fix the gate")
     end
+  end
+
+  # what LiveSelect sends when someone is picked in a row's owner menu
+  defp pick_owner(view, task, user) do
+    form = "owner_#{task.id}"
+
+    view
+    |> element("#task_#{task.id}_assign")
+    |> render_change(%{
+      "_target" => [form, "owner"],
+      form => %{"owner" => Jason.encode!(%{"id" => user.id})}
+    })
   end
 end

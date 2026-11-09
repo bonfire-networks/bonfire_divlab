@@ -68,11 +68,11 @@ defmodule Bonfire.Divlab.Tasks.ActionsTest do
 
   describe "done/2" do
     test "takes the task off every view", %{ivan: ivan, mayel: mayel, group: group} do
-      task = task!(ivan, group, "sweep", provider_id: ivan.id, due: in_days(1))
+      task = task!(ivan, group, "sweep", provider_id: ivan.id)
 
       assert {:ok, _} = Tasks.done(task.id, current_user: mayel)
 
-      for view <- [:inbox, :mine, :waiting, :due_soon],
+      for view <- [:inbox, :mine, :waiting],
           do: assert(names(view, ivan, group) == [], "still in #{view}")
     end
 
@@ -81,22 +81,6 @@ defmodule Bonfire.Divlab.Tasks.ActionsTest do
       task = task!(ivan, group, "sweep")
 
       assert {:error, _} = Tasks.done(task.id, current_user: outsider)
-    end
-  end
-
-  describe "set_due/3" do
-    test "puts an undated task in Due soon", %{ivan: ivan, mayel: mayel, group: group} do
-      task = task!(ivan, group, "call the plumber")
-
-      assert {:ok, _} = Tasks.set_due(task.id, in_days(2), current_user: mayel)
-      assert names(:due_soon, ivan, group) == ["call the plumber"]
-    end
-
-    test "refuses someone who can't post in the group",
-         %{ivan: ivan, outsider: outsider, group: group} do
-      task = task!(ivan, group, "call the plumber")
-
-      assert {:error, _} = Tasks.set_due(task.id, in_days(2), current_user: outsider)
     end
   end
 
@@ -147,16 +131,6 @@ defmodule Bonfire.Divlab.Tasks.ActionsTest do
     end
   end
 
-  describe "clear_due/2" do
-    test "takes the task off Due soon", %{ivan: ivan, group: group} do
-      task = task!(ivan, group, "fix the gate", provider_id: ivan.id, due: in_days(1))
-
-      assert {:ok, _} = Tasks.clear_due(task.id, current_user: ivan)
-      assert names(:due_soon, ivan, group) == []
-      assert names(:mine, ivan, group) == ["fix the gate"]
-    end
-  end
-
   describe "delete/2" do
     test "lets the creator delete the task, which leaves every view",
          %{ivan: ivan, group: group} do
@@ -180,13 +154,14 @@ defmodule Bonfire.Divlab.Tasks.ActionsTest do
       assert names(:inbox, ivan, group) == ["old idea"]
     end
 
-    test "takes the task off the group's timeline", %{ivan: ivan, group: group} do
+    # the group no longer boosts items (tasks-v2 decision 10), so the feed to check is the members' Local
+    test "takes the task out of the feeds", %{ivan: ivan, group: group} do
       task = task!(ivan, group, "Fix the gate")
-      assert in_group_timeline?(task, group)
+      assert Bonfire.Social.FeedLoader.feed_contains?(:local, task, current_user: ivan)
 
       {:ok, _} = Tasks.delete(task.id, current_user: ivan)
 
-      refute in_group_timeline?(task, group)
+      refute Bonfire.Social.FeedLoader.feed_contains?(:local, task, current_user: ivan)
     end
   end
 end

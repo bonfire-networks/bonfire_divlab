@@ -1,5 +1,5 @@
 defmodule Bonfire.Divlab.Web.Preview.TaskLive do
-  @moduledoc "A task in a feed (D8e in tasks-v1.md): its title, description, owner, date and whether it's done, linking to its group's Tasks page until tasks have a page of their own."
+  @moduledoc "A task in a feed (D8e in tasks-v1.md): its title, description, owner and whether it's done, linking to its group's Tasks page."
   use Bonfire.UI.Common.Web, :stateless_component
 
   alias Bonfire.Divlab.Web.TaskRowLive
@@ -60,13 +60,13 @@ defmodule Bonfire.Divlab.Web.Preview.TaskLive do
     end
   end
 
-  # `path/1` caches the pointer lookup, so a feed of tasks from one group looks the group up once
-  defp tasks_path(%{context_id: context_id}) when is_binary(context_id) do
+  @doc "The Tasks page of the group `object` (a task or a list) is in, or `nil`. `path/1` caches the pointer lookup, so a feed of tasks from one group looks the group up once."
+  def tasks_path(%{context_id: context_id}) when is_binary(context_id) do
     case path(context_id) do
       group_path when is_binary(group_path) -> group_path <> "/tasks"
       _ -> nil
     end
   end
 
-  defp tasks_path(_object), do: nil
+  def tasks_path(_object), do: nil
 end

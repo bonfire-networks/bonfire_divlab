@@ -1,6 +1,6 @@
 defmodule Bonfire.Divlab.Acts.CreateTask do
   @moduledoc """
-  Builds the Intent changeset for the task `:create` epic and registers it for insertion.
+  Builds the Intent changeset for the `:create_item` epic and registers it for insertion.
 
   Intent's own `creator_id` stands in for the `Creator` act, which can't run on an Intent (no `created` mixin). The id is set here because `Bonfire.Social.Acts.Threaded` uses it as the new thread's id before the insert.
   """
@@ -30,10 +30,11 @@ defmodule Bonfire.Divlab.Acts.CreateTask do
           |> Keyword.get(Keyword.get(act.options, :attrs, :task_attrs), %{})
           |> Map.put(:action_id, @action_id)
           |> Map.put(:context_id, options[:context_id])
-          |> maybe_put_receiver(creator)
 
         Intent.create_changeset(creator, attrs)
-        |> Ecto.Changeset.put_change(:id, Needle.ULID.generate())
+        |> Bonfire.Divlab.Tasks.validate_name()
+        # a batch passes increasing ids, so its items keep the order they were written in (ULIDs only order by the millisecond)
+        |> Ecto.Changeset.put_change(:id, attrs[:id] || Needle.ULID.generate())
         |> Map.put(:action, :insert)
         |> Epic.assign(epic, on, ...)
         |> Work.add(on)
@@ -42,11 +43,4 @@ defmodule Bonfire.Divlab.Acts.CreateTask do
         Epic.add_error(epic, act, :missing_current_user)
     end
   end
-
-  # someone giving a task to someone else is who's waiting on it, as `Bonfire.Divlab.Tasks.assign/3` has it
-  defp maybe_put_receiver(%{provider_id: provider_id} = attrs, %{id: creator_id})
-       when is_binary(provider_id) and provider_id != creator_id,
-       do: Map.put_new(attrs, :receiver_id, creator_id)
-
-  defp maybe_put_receiver(attrs, _creator), do: attrs
 end

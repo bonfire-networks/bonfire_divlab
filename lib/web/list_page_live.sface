@@ -1,0 +1,152 @@
+<section id={"list_#{id(@list)}_page"} data-role="list_page" class="flex flex-col">
+  {!-- no padding of its own: the title and the box start at the avatar's edge, as the poll's question does --}
+  <header class="pt-1 pb-3">
+    <div class="flex items-start gap-2">
+      {!-- the name, written in place by those who may edit, as an item line is: saved on Enter or blur (decision 26) --}
+      {#if @may_edit}
+        <div class="min-w-0 flex-1">
+          <label for={"list_#{id(@list)}_name"} class="sr-only">{l("List name")}</label>
+          <input
+            id={"list_#{id(@list)}_name"}
+            data-role="list_name"
+            type="text"
+            autocomplete="off"
+            value={@list.name}
+            placeholder={l("Untitled list")}
+            phx-blur="Bonfire.Divlab:rename_list"
+            phx-keydown="Bonfire.Divlab:rename_list"
+            phx-key="Enter"
+            phx-target={@myself}
+            class="w-full border-0 bg-transparent p-0 !text-xl font-medium placeholder:text-base-content/40 focus:outline-none focus:ring-0"
+          >
+        </div>
+      {#else}
+        <h2 class="min-w-0 flex-1 break-words text-xl font-medium">{ListLive.list_name(@list)}</h2>
+      {/if}
+      {!-- a list has no dates; it's open until someone closes it, and a closed list takes no new items (tasks-v2 §16, decisions 17 and 22). The list's own ⋯ menu, as a row's: the activity's ⋯ menu has no slot an extension can fill (`actions_live.sface:157`) --}
+      <Dropdown
+        :if={@may_edit || @may_delete_list}
+        id={"list_#{id(@list)}_menu"}
+        position="bottom-end"
+        trigger_class="btn btn-ghost btn-circle btn-sm shrink-0 text-base-content/60 hover:text-base-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        label={l("List actions")}
+      >
+        <:trigger>
+          <#Icon iconify="ph:dots-three-bold" class="size-5" />
+        </:trigger>
+        <li :if={@may_edit}>
+          <button
+            type="button"
+            id={"list_#{id(@list)}_rename"}
+            phx-click={JS.focus(to: "#list_#{id(@list)}_name")}
+          >
+            <#Icon iconify="ph:pencil-simple" class="size-4" />
+            {l("Rename")}
+          </button>
+        </li>
+        <li :if={@may_edit}>
+          <button
+            :if={!@list.finished}
+            type="button"
+            id={"list_#{id(@list)}_close"}
+            phx-click="Bonfire.Divlab:close_list"
+            phx-target={@myself}
+          >
+            <#Icon iconify="ph:check-circle" class="size-4" />
+            {l("Close list")}
+          </button>
+          <button
+            :if={@list.finished}
+            type="button"
+            id={"list_#{id(@list)}_reopen"}
+            phx-click="Bonfire.Divlab:reopen_list"
+            phx-target={@myself}
+          >
+            <#Icon iconify="ph:arrow-counter-clockwise" class="size-4" />
+            {l("Reopen list")}
+          </button>
+        </li>
+        {!-- the list and every item in it, with their activities (`Tasks.delete_list/2`) --}
+        <li :if={@may_delete_list}>
+          <button
+            type="button"
+            id={"list_#{id(@list)}_delete"}
+            phx-click="Bonfire.Divlab:delete_list"
+            phx-target={@myself}
+            data-confirm={l("Delete this list and its %{count} items?", count: length(@items))}
+            class="text-error"
+          >
+            <#Icon iconify="ph:trash" class="size-4" />
+            {l("Delete list")}
+          </button>
+        </li>
+      </Dropdown>
+    </div>
+    <div class="mt-1.5 flex items-center gap-3 text-sm text-base-content/70">
+      <progress
+        class="progress progress-primary h-1.5 min-w-0 flex-1"
+        value={done_count(@items)}
+        max={max(length(@items), 1)}
+        aria-label={progress_label(@items)}
+      />
+      {!-- the dots separate the facts --}
+      <p class="flex shrink-0 flex-wrap items-baseline gap-x-1.5 [&>*+*]:before:mr-1.5 [&>*+*]:before:inline-block [&>*+*]:before:content-['·']">
+        <span :if={@list.finished}>{l("Closed")}</span>
+        <span data-role="list_progress" class="tabular-nums">{progress_label(@items)}</span>
+      </p>
+    </div>
+    {!-- the description (the list's `note`, decision 19): written in place by those who may edit, saved on blur; one line until there's more to show (`field-sizing`, as the composer's fields). No `phx-update="ignore"` here: this component can be mounted again under a new id, and an ignored field would keep a stale `phx-target`; LiveView leaves a focused field's text alone anyway --}
+    {#if @may_edit}
+      <div class="mt-2">
+        <label for={"list_#{id(@list)}_note"} class="sr-only">{l("Description")}</label>
+        <textarea
+          id={"list_#{id(@list)}_note"}
+          data-role="list_note"
+          rows="1"
+          phx-blur="Bonfire.Divlab:set_list_note"
+          phx-target={@myself}
+          placeholder={l("Add a description")}
+          style="field-sizing: content; min-height: 0;"
+          class="block w-full resize-none border-0 bg-transparent p-0 text-base text-base-content/80 placeholder:text-base-content/40 focus:outline-none focus:ring-0"
+        >{@list.note}</textarea>
+      </div>
+    {#elseif @list.note}
+      <p data-role="list_note" class="mt-2 whitespace-pre-line break-words text-base-content/80">{@list.note}</p>
+    {/if}
+  </header>
+
+  <ul
+    id={"list_#{id(@list)}_lines"}
+    phx-hook="Bonfire.Divlab.Web.ListPageLive#ListLines"
+    phx-target={@myself}
+    class="overflow-hidden rounded-box border-hair border-divider divide-hair divide-divider"
+  >
+    {#for item <- @items}
+      <Bonfire.Divlab.Web.TaskRowLive
+        task={item}
+        view={:list}
+        members={@members}
+        may_delete={MapSet.member?(@deletable, id(item))}
+        event_target={@myself}
+        editable={@may_edit}
+      />
+    {/for}
+    {!-- the trailing line: typing in it and pressing Enter adds an item to this list, and pasting a checklist adds one per line; a closed list takes no new items (`Tasks.add_items/2`) --}
+    <li :if={@may_edit && !@list.finished} class="flex min-h-11 items-center gap-3 px-4 sm:px-6">
+      {!-- a plus, not a dashed circle: that one means "nobody owns it" --}
+      <#Icon iconify="ph:plus" class="size-4 shrink-0 text-base-content/50" />
+      <div id={"list_#{id(@list)}_add_wrap"} phx-update="ignore" class="min-w-0 flex-1">
+        <label for={"list_#{id(@list)}_add"} class="sr-only">{l("Add an item")}</label>
+        <input
+          id={"list_#{id(@list)}_add"}
+          data-role="list_add"
+          type="text"
+          autocomplete="off"
+          placeholder={if @items == [], do: l("Write the first item, then press Enter"), else: l("Add an item")}
+          class="w-full border-0 bg-transparent p-0 py-2 !text-base placeholder:text-base-content/40 focus:outline-none focus:ring-0"
+        >
+      </div>
+    </li>
+  </ul>
+  <p :if={@items == [] && !(@may_edit && !@list.finished)} class="px-4 py-6 text-sm text-muted sm:px-6">{l("No items yet.")}</p>
+</section>

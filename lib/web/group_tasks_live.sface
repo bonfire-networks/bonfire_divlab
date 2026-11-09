@@ -3,8 +3,8 @@
     <h1 class="text-lg">{l("Tasks")}</h1>
     <Bonfire.UI.Common.SmartInputButtonLive
       id="group_tasks_new"
-      component={Bonfire.Divlab.Web.CreateTaskLive}
-      prompt={l("New task")}
+      component={Bonfire.Divlab.Web.CreateTasksLive}
+      prompt={l("Add tasks")}
       icon="ph:plus"
       icon_class="size-4"
       class="btn btn-sm btn-ghost gap-1.5 border border-base-content/15 !font-normal"
@@ -12,7 +12,7 @@
         context_id: id(@category),
         create_object_type: :task,
         to_circles: Bonfire.Classify.Boundaries.post_circles_for_group(@category),
-        to_boundaries: List.wrap(Bonfire.Classify.Boundaries.read_default_content_visibility(@category))
+        to_boundaries: @category |> Bonfire.Classify.Boundaries.list_post_audiences() |> Enum.take(1)
       }}
     />
   </header>

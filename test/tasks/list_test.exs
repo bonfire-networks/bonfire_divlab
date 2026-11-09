@@ -31,42 +31,25 @@ defmodule Bonfire.Divlab.Tasks.ListTest do
     assert names(:inbox, me, group) == ["newer", "older"]
   end
 
-  test "Mine lists my open tasks, soonest first and undated last",
-       %{me: me, other: other, group: group} do
-    task!(me, group, "undated", provider_id: me.id)
-    task!(me, group, "in three days", provider_id: me.id, due: in_days(3))
-    task!(me, group, "tomorrow", provider_id: me.id, due: in_days(1))
+  # tasks have no due dates (tasks-v2 §17): Mine and Waiting on are newest first, as the Inbox is
+  test "Mine lists my open tasks, newest first", %{me: me, other: other, group: group} do
+    task!(me, group, "older", provider_id: me.id)
+    task!(me, group, "newer", provider_id: me.id)
     task!(me, group, "done", provider_id: me.id, finished: true)
     task!(me, group, "someone else's", provider_id: other.id)
 
-    assert names(:mine, me, group) == ["tomorrow", "in three days", "undated"]
+    assert names(:mine, me, group) == ["newer", "older"]
   end
 
-  test "Waiting on lists what I asked someone else to do, soonest first",
+  test "Waiting on lists what I asked someone else to do, newest first",
        %{me: me, other: other, group: group} do
-    task!(me, group, "chase next week",
-      receiver_id: me.id,
-      provider_id: other.id,
-      due: in_days(7)
-    )
-
-    task!(me, group, "chase tomorrow", receiver_id: me.id, provider_id: other.id, due: in_days(1))
+    task!(me, group, "chase first", receiver_id: me.id, provider_id: other.id)
+    task!(me, group, "chase second", receiver_id: me.id, provider_id: other.id)
     task!(me, group, "my own", receiver_id: me.id, provider_id: me.id)
     task!(me, group, "nobody yet", receiver_id: me.id)
     task!(me, group, "not mine to chase", receiver_id: other.id, provider_id: other.id)
 
-    assert names(:waiting, me, group) == ["chase tomorrow", "chase next week"]
-  end
-
-  test "Due soon lists overdue tasks and those due in the next 7 days, soonest first",
-       %{me: me, group: group} do
-    task!(me, group, "overdue", due: in_days(-1))
-    task!(me, group, "in three days", due: in_days(3))
-    task!(me, group, "in ten days", due: in_days(10))
-    task!(me, group, "undated")
-    task!(me, group, "done", due: in_days(2), finished: true)
-
-    assert names(:due_soon, me, group) == ["overdue", "in three days"]
+    assert names(:waiting, me, group) == ["chase second", "chase first"]
   end
 
   test "Done lists finished tasks, the most recently changed first",

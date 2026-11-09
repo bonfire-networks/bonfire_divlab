@@ -1,6 +1,6 @@
 defmodule Bonfire.Divlab.Acts.RequireGroup do
   @moduledoc """
-  Stops the task `:create` epic when its group isn't among the categories the `Tag` act kept, ie. the group doesn't exist or the creator lacks `:tag` on it (`Bonfire.Social.Tags.maybe_boostable_categories/2`), when the group hasn't turned Tasks on (`Bonfire.Divlab.Tasks.enabled_for?/2`), or when the task's owner isn't one of the group's members (`Bonfire.Divlab.Tasks.may_own?/2`).
+  Stops the `:create_item` or `:create_list` epic when its group isn't among the categories the `Tag` act kept, ie. the group doesn't exist or the creator lacks `:tag` on it (`Bonfire.Social.Tags.maybe_boostable_categories/2`), or when the group hasn't turned Tasks on (`Bonfire.Divlab.Tasks.enabled_for?/2`). Items are created with no owner; `Bonfire.Divlab.Tasks.assign/3` checks the owner is a member.
 
   A post in that case is still created, outside the group. A task would get no ACLs and land in the Local feed, so it's refused instead. Runs after `Tag`, before `SetBoundaries`.
   """
@@ -15,7 +15,6 @@ defmodule Bonfire.Divlab.Acts.RequireGroup do
   end
 
   def run(epic, act) do
-    on = Keyword.get(act.options, :on, :task)
     group_id = epic.assigns[:options][:context_id]
 
     kept =
@@ -31,19 +30,8 @@ defmodule Bonfire.Divlab.Acts.RequireGroup do
       not Bonfire.Divlab.Tasks.enabled_for?(kept, epic.assigns[:options]) ->
         Epic.add_error(epic, act, :tasks_not_enabled)
 
-      not owner_allowed?(epic.assigns[on], kept) ->
-        Epic.add_error(epic, act, :owner_not_a_member)
-
       true ->
         epic
-    end
-  end
-
-  # the owner on the task `CreateTask` built, whichever option its attrs came from; nobody, the Inbox, is always fine
-  defp owner_allowed?(changeset, group) do
-    case Ecto.Changeset.get_field(changeset, :provider_id) do
-      nil -> true
-      owner_id -> Bonfire.Divlab.Tasks.may_own?(owner_id, group)
     end
   end
 end

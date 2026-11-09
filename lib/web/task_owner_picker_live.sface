@@ -1,0 +1,13 @@
+<form id={"task_#{id(@task)}_assign"} phx-change="change" phx-target={@myself} class="w-full">
+  <label for={"owner_#{id(@task)}_owner_text_input"} class="sr-only">{l("Owner")}</label>
+  <Bonfire.UI.Common.MultiselectLive
+    implementation={:live_select}
+    mode={:single}
+    form={owner_form(@task)}
+    form_input_name={:owner}
+    preloaded_options={@members}
+    debounce={300}
+    event_target={@myself}
+    label={l("Assign to…")}
+  />
+</form>

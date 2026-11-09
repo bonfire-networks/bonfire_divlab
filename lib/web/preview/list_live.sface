@@ -1,0 +1,24 @@
+{#if @viewing_main_object}
+  <Bonfire.Divlab.Web.ListPageLive id={"list_page_#{id(@object)}"} list={@object} />
+{#else}
+  {!-- in feeds a list reads like a post: its name at the size of a post's text, then whether it's closed and how far along, then its first open items --}
+  <div data-role="list_preview" class="flex flex-col gap-2 text-[1rem] leading-[1.4]">
+    <a href={"/discussion/#{id(@object)}"} class="break-words font-medium hover:underline">
+      <#Icon iconify="ph:list-checks" class="mr-1 inline size-4 align-[-2px] text-base-content/60" />
+      {list_name(@object)}
+    </a>
+    <p class="flex flex-wrap items-baseline gap-x-1.5 text-sm text-base-content/70 [&>*+*]:before:mr-1.5 [&>*+*]:before:inline-block [&>*+*]:before:content-['·']">
+      <span :if={e(@object, :finished, nil)}>{l("Closed")}</span>
+      <span data-role="list_progress" class="tabular-nums">{@progress}</span>
+    </p>
+    <ul :if={@open_items != []} class="flex flex-col gap-1">
+      {#for item <- @open_items}
+        <li data-role="list_open_item" class="flex items-start gap-2 text-sm">
+          <span class="mt-[3px] size-3.5 shrink-0 rounded-full border-[1.5px] border-base-content/50" aria-hidden="true" />
+          <span class="min-w-0 break-words">{item.name}</span>
+        </li>
+      {/for}
+      <li :if={@more > 0} class="pl-5.5 text-sm text-base-content/60">{l("and %{count} more", count: @more)}</li>
+    </ul>
+  </div>
+{/if}

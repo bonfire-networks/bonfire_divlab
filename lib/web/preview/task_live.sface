@@ -51,14 +51,6 @@
           {#match label}
             <span data-role={if TaskRowLive.owner_name(@object), do: "task_owner", else: "task_unassigned"}>{label}</span>
         {/case}
-        <time
-          :if={e(@object, :due, nil)}
-          data-role="task_due"
-          data-overdue={TaskRowLive.overdue?(@object)}
-          datetime={DateTime.to_iso8601(@object.due)}
-          title={Bonfire.Common.DatesTimes.format_date(@object.due)}
-          class={"tabular-nums", "text-error": TaskRowLive.overdue?(@object)}
-        >{l("Due %{date}", date: TaskRowLive.due_label(@object.due))}</time>
         <LinkLive
           :if={@tasks_path}
           to={@tasks_path}

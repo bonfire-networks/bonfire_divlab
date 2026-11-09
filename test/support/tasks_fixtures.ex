@@ -26,30 +26,43 @@ defmodule Bonfire.Divlab.TasksFixtures do
     group
   end
 
-  @doc "A task named `name` that `user` creates in `group`, with any other Intent fields in `attrs`."
+  @doc """
+  A task named `name` that `user` adds to `group` with no list, then with any other Intent fields in `attrs` set directly (`provider_id`, `receiver_id`, `finished`, `note`), so a test can start from any state. Giving it to someone else makes `user` its receiver, as `Tasks.assign/3` does.
+  """
   def task!(user, group, name, attrs \\ []) do
     # task ids are ULIDs, which only order by the millisecond (`Needle.ULID.generate/1`), so a millisecond apart keeps "newest first" deterministic
     Process.sleep(1)
 
-    {:ok, task} =
-      Tasks.create(
+    {:ok, [task]} =
+      Tasks.add_items([name],
         current_user: user,
         context_id: group.id,
         boundary: "members:private",
-        task_attrs: attrs |> Map.new() |> Map.put(:name, name)
+        list_id: nil
       )
 
-    task
+    case attrs |> Map.new() |> waiting_on(user) do
+      empty when empty == %{} ->
+        task
+
+      attrs ->
+        task
+        |> ValueFlows.Planning.Intent.update_changeset(attrs)
+        |> Bonfire.Common.Repo.update!()
+    end
   end
+
+  defp waiting_on(%{provider_id: provider_id} = attrs, %{id: user_id})
+       when is_binary(provider_id) and provider_id != user_id,
+       do: Map.put_new(attrs, :receiver_id, user_id)
+
+  defp waiting_on(attrs, _user), do: attrs
 
   @doc "The names of the tasks `user` sees in one of the Tasks tab's views, in order."
   def names(view, user, group) do
     {:ok, tasks} = Tasks.list(view, group.id, current_user: user)
     Enum.map(tasks, & &1.name)
   end
-
-  @doc "Now, moved by `days` (negative for the past)."
-  def in_days(days), do: DateTime.add(DateTime.utc_now(), days, :day)
 
   @doc "Whether `object` is on `group`'s timeline, checked as `Bonfire.Classify.PublishInGroupTest` does."
   def in_group_timeline?(object, group),
