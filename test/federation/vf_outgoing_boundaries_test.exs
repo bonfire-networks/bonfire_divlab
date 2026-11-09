@@ -14,14 +14,18 @@ defmodule Bonfire.Divlab.Federation.VfOutgoingBoundariesTest do
   setup do
     Process.put(:federating, true)
 
-    user = fake_user!() |> Bonfire.Common.Repo.maybe_preload([:peered, :shared_user, character: :peered])
+    user =
+      fake_user!()
+      |> Bonfire.Common.Repo.maybe_preload([:peered, :shared_user, character: :peered])
 
     # ember and social compile the GraphQL schema without VF's types (`config/ember.exs:44`), so `fetch_api_object/4` crashes there before addressing. Stubbed so that what's checked here is the addressing.
     Repatch.patch(
       ValueFlows.Util.Federation,
       :fetch_api_object,
       [mode: :shared],
-      fn id, _type, _depth, _filters -> %{"__typename" => "Proposal", "id" => id, "name" => "Offer"} end
+      fn id, _type, _depth, _filters ->
+        %{"__typename" => "Proposal", "id" => id, "name" => "Offer"}
+      end
     )
 
     %{user: user}
@@ -29,7 +33,12 @@ defmodule Bonfire.Divlab.Federation.VfOutgoingBoundariesTest do
 
   # Called directly because `Outgoing.maybe_federate/3` can't reach it under test: `AdapterUtils.preload_peered/1` asks for `created: [creator: :peered]`, which on a Proposal is a date field, and `Untangle.err/2` raises in the test env (it recovers elsewhere).
   defp federate(user, proposal, verb \\ :create),
-    do: Proposals.ap_publish_activity(user, verb, Bonfire.Common.Repo.maybe_preload(%{proposal | creator: user}, :peered))
+    do:
+      Proposals.ap_publish_activity(
+        user,
+        verb,
+        Bonfire.Common.Repo.maybe_preload(%{proposal | creator: user}, :peered)
+      )
 
   defp to_public?({:ok, %{data: data}}), do: AdapterUtils.public_uri() in List.wrap(data["to"])
   defp to_public?(_), do: false
@@ -63,10 +72,13 @@ defmodule Bonfire.Divlab.Federation.VfOutgoingBoundariesTest do
   test "an update isn't lost when federation ignores it", %{user: user} do
     {:ok, proposal} = Proposals.create(user, %{name: "Local offer", to_boundaries: "local"})
 
-    Repatch.patch(Bonfire.Federate.ActivityPub.Outgoing, :maybe_federate, [mode: :shared], fn _, _, _ ->
+    Repatch.patch(Bonfire.Federate.ActivityPub.Outgoing, :maybe_federate, [mode: :shared], fn _,
+                                                                                              _,
+                                                                                              _ ->
       :ignore
     end)
 
-    assert {:ok, %{name: "Renamed"}} = Proposals.update(%{proposal | creator: user}, %{name: "Renamed"})
+    assert {:ok, %{name: "Renamed"}} =
+             Proposals.update(%{proposal | creator: user}, %{name: "Renamed"})
   end
 end
