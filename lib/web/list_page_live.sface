@@ -115,11 +115,12 @@
     {/if}
   </header>
 
+  {!-- no `overflow-hidden`: it would clip the rows' menus (the owner search's results); the first and last rows round their own hover background instead --}
   <ul
     id={"list_#{id(@list)}_lines"}
     phx-hook="Bonfire.Divlab.Web.ListPageLive#ListLines"
     phx-target={@myself}
-    class="overflow-hidden rounded-box border-hair border-divider divide-hair divide-divider"
+    class="rounded-box border-hair border-divider divide-hair divide-divider [&>li:first-child]:rounded-t-box [&>li:last-child]:rounded-b-box"
   >
     {#for item <- @items}
       <Bonfire.Divlab.Web.TaskRowLive
