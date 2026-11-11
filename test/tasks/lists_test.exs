@@ -20,7 +20,11 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
   describe "create_list/3" do
     test "creates the list and its items, each in the list", %{member: member, group: group} do
       {:ok, %{list: list, items: items}} =
-        Tasks.create_list(%{name: "Sprint 47"}, ["Write the note", "Archive the pad"], opts(member, group))
+        Tasks.create_list(
+          %{name: "Sprint 47"},
+          ["Write the note", "Archive the pad"],
+          opts(member, group)
+        )
 
       assert %ValueFlows.Process{name: "Sprint 47"} = list
       assert Enum.map(items, & &1.name) == ["Write the note", "Archive the pad"]
@@ -58,7 +62,8 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
 
     test "hides the list and its items from non-members and guests",
          %{member: member, outsider: outsider, group: group} do
-      {:ok, %{list: list}} = Tasks.create_list(%{name: "Private"}, ["Secret"], opts(member, group))
+      {:ok, %{list: list}} =
+        Tasks.create_list(%{name: "Private"}, ["Secret"], opts(member, group))
 
       assert {:ok, []} = Tasks.lists(group.id, current_user: outsider)
       assert {:ok, []} = Tasks.lists(group.id, current_user: nil)
@@ -85,7 +90,11 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
              ]
 
       assert Tasks.parse_lines("One\r\nTwo\n\n- Three") ==
-               [%{name: "One", finished: false}, %{name: "Two", finished: false}, %{name: "Three", finished: false}]
+               [
+                 %{name: "One", finished: false},
+                 %{name: "Two", finished: false},
+                 %{name: "Three", finished: false}
+               ]
     end
   end
 
@@ -138,7 +147,10 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
   end
 
   describe "close_list/2 and reopen_list/2" do
-    test "closing leaves open items open, and reopening undoes it", %{member: member, group: group} do
+    test "closing leaves open items open, and reopening undoes it", %{
+      member: member,
+      group: group
+    } do
       {:ok, %{list: list, items: [item]}} =
         Tasks.create_list(%{name: "Sprint"}, ["Left over"], opts(member, group))
 
@@ -150,10 +162,14 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
 
     # a closed list takes no new items (Ivan, 2026-11-09, from the tasks statechart), until it's reopened
     test "a closed list refuses new items, until it's reopened", %{member: member, group: group} do
-      {:ok, %{list: list}} = Tasks.create_list(%{name: "Shipped"}, ["Done thing"], opts(member, group))
+      {:ok, %{list: list}} =
+        Tasks.create_list(%{name: "Shipped"}, ["Done thing"], opts(member, group))
+
       {:ok, _} = Tasks.close_list(list.id, current_user: member)
 
-      assert {:error, :list_closed} = Tasks.add_items(["Late"], opts(member, group, list_id: list.id))
+      assert {:error, :list_closed} =
+               Tasks.add_items(["Late"], opts(member, group, list_id: list.id))
+
       assert {:ok, [_]} = Tasks.items(list.id, current_user: member)
 
       {:ok, _} = Tasks.reopen_list(list.id, current_user: member)
@@ -191,7 +207,8 @@ defmodule Bonfire.Divlab.Tasks.ListsTest do
   end
 
   defp counts(group) do
-    {from(p in ValueFlows.Process, where: p.context_id == ^group.id, select: count()) |> Repo.one(),
+    {from(p in ValueFlows.Process, where: p.context_id == ^group.id, select: count())
+     |> Repo.one(),
      from(i in ValueFlows.Planning.Intent, where: i.context_id == ^group.id, select: count())
      |> Repo.one()}
   end

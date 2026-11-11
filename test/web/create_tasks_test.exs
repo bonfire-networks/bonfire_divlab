@@ -40,7 +40,11 @@ defmodule Bonfire.Divlab.Web.CreateTasksTest do
       # a forged form: the page itself has no "none" to send
       composer
       |> form("#smart_input_tasks_content form")
-      |> render_submit(%{"post" => %{"into" => "none"}, "choices" => %{"0" => %{"name" => "Loose one"}}})
+      |> render_submit(%{
+        "post" => %{"into" => "none"},
+        "choices" => %{"0" => %{"name" => "Loose one"}}
+      })
+
       assert render(composer) =~ "Pick a list, or start a new one"
     end)
 
@@ -72,7 +76,11 @@ defmodule Bonfire.Divlab.Web.CreateTasksTest do
     end)
 
     assert {:ok, items} = Tasks.items(list.id, current_user: me)
-    assert Enum.map(items, &{&1.name, &1.finished}) == [{"Already done", true}, {"Still to do", false}]
+
+    assert Enum.map(items, &{&1.name, &1.finished}) == [
+             {"Already done", true},
+             {"Still to do", false}
+           ]
   end
 
   test "New list with no name shows an error and creates nothing",
@@ -119,7 +127,8 @@ defmodule Bonfire.Divlab.Web.CreateTasksTest do
 
   # submits `lines` as the `Lines` hook numbers them (the hook itself is JS, so the browser pass checks it). `form_data` fills fields the form has, so its hidden `post[into]` keeps what the chip picked
   defp submit(composer, lines, form_data \\ []) do
-    choices = lines |> Enum.with_index() |> Map.new(fn {line, i} -> {to_string(i), %{"name" => line}} end)
+    choices =
+      lines |> Enum.with_index() |> Map.new(fn {line, i} -> {to_string(i), %{"name" => line}} end)
 
     composer
     |> form("#smart_input_tasks_content form", form_data)
@@ -128,7 +137,11 @@ defmodule Bonfire.Divlab.Web.CreateTasksTest do
 
   defp create_list!(user, group, attrs) do
     {:ok, %{list: list}} =
-      Tasks.create_list(attrs, [], current_user: user, context_id: group.id, boundary: "members:private")
+      Tasks.create_list(attrs, [],
+        current_user: user,
+        context_id: group.id,
+        boundary: "members:private"
+      )
 
     list
   end

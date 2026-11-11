@@ -18,8 +18,10 @@ defmodule Bonfire.Divlab.Web.ListPageLive do
   data may_edit, :boolean, default: false
   # the list's creator, or someone its boundaries give `:delete` (`Tasks.delete_list/2`)
   data may_delete_list, :boolean, default: false
+
   # the group's default audience for items written here, as the composer picks it (`Bonfire.Classify.Boundaries.list_post_audiences/1`)
   data boundary, :any, default: nil
+
   # the list this page loaded: once mounted, the page owns its list, which its own events change. The discussion passes its copy of `list` again whenever it re-renders (each new reply), which would bring old values back and reload every item
   data loaded_id, :any, default: nil
 
@@ -44,7 +46,8 @@ defmodule Bonfire.Divlab.Web.ListPageLive do
        members: TasksBoardLive.members(group, context),
        may_edit: Bonfire.Boundaries.can?(current_user(context), :tag, list.context_id) == true,
        may_delete_list: Tasks.may_delete?(current_user(context), list),
-       boundary: group && group |> Bonfire.Classify.Boundaries.list_post_audiences() |> List.first()
+       boundary:
+         group && group |> Bonfire.Classify.Boundaries.list_post_audiences() |> List.first()
      )
      |> load()}
   end

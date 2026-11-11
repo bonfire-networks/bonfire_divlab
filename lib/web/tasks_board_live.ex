@@ -50,7 +50,9 @@ defmodule Bonfire.Divlab.Web.TasksBoardLive do
               group
               |> members(socket.assigns[:__context__])
               # the viewer first, since taking a task is the most common assignment
-              |> Enum.sort_by(fn {_label, %{id: id}} -> id != current_user_id(socket.assigns[:__context__]) end),
+              |> Enum.sort_by(fn {_label, %{id: id}} ->
+                id != current_user_id(socket.assigns[:__context__])
+              end),
             members_of: id(group)
           )
 

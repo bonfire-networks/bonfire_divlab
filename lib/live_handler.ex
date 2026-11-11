@@ -1,7 +1,6 @@
 defmodule Bonfire.Divlab.LiveHandler do
   use Bonfire.UI.Common.Web, :live_handler
 
-
   # the group comes from the page's own assigns, not from the form, so nobody can point the toggle at another group
   def handle_event("set_tasks_enabled", %{"enabled" => enabled}, socket) do
     with {:ok, _} <-
@@ -222,14 +221,17 @@ defmodule Bonfire.Divlab.LiveHandler do
   # the composer's lines in the order they were written: the `Lines` hook numbers them `choices[i][name]`
   defp lines(choices) when is_map(choices) do
     choices
-    |> Enum.sort_by(fn {index, _} -> with {n, _} <- Integer.parse(to_string(index)), do: n, else: (_ -> 0) end)
+    |> Enum.sort_by(fn {index, _} ->
+      with {n, _} <- Integer.parse(to_string(index)), do: n, else: (_ -> 0)
+    end)
     |> Enum.map(fn {_, choice} -> e(choice, "name", nil) end)
     |> Enum.filter(&is_binary/1)
   end
 
   defp lines(_), do: []
 
-  defp created_message(%{items: items}), do: l("List created with %{count} items", count: length(items))
+  defp created_message(%{items: items}),
+    do: l("List created with %{count} items", count: length(items))
 
   # `add_items/2` puts the list it read on each item
   defp created_message(items) do

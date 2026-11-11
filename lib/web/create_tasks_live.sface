@@ -87,7 +87,7 @@
                   phx-hook="Bonfire.Divlab.Web.CreateTasksLive#Title"
                   placeholder={l("Name the new list")}
                   class="w-full border-0 bg-transparent p-0 !text-xl font-medium placeholder:font-normal placeholder:text-base-content/40 focus:outline-none focus:ring-0"
-                >
+                />
               </div>
               {!-- an optional description (the list's `note`), also editable on the list's page (tasks-v2 §15) --}
               <div id="task_list_note_wrapper" phx-update="ignore" class="mt-1">
@@ -110,7 +110,10 @@
               class="mt-3 flex flex-col"
             >
               <li data-role="task_line_row" class="flex min-h-10 items-center gap-3">
-                <span class="size-4 shrink-0 rounded-full border-[1.5px] border-base-content/40" aria-hidden="true" />
+                <span
+                  class="size-4 shrink-0 rounded-full border-[1.5px] border-base-content/40"
+                  aria-hidden="true"
+                />
                 <label for="task_line_0" class="sr-only">{l("Item")}</label>
                 <input
                   id="task_line_0"
@@ -120,7 +123,7 @@
                   autocomplete="off"
                   placeholder={l("What needs doing? Enter for the next")}
                   class="w-full border-0 bg-transparent p-0 text-base placeholder:text-base-content/40 focus:outline-none focus:ring-0"
-                >
+                />
               </li>
             </ul>
             <p class="py-3 text-xs text-base-content/60">{l("Enter for the next item · paste a checklist to add many · owners go on the items after")}</p>

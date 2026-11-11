@@ -45,22 +45,22 @@
       </ul>
     {/if}
   {#else}
-  {#case @lists[@view] || []}
-    {#match []}
-      <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(@view)}</p>
-    {#match tasks}
-      <ul id="tasks_list" class="divide-hair divide-divider">
-        {#for task <- tasks}
-          <Bonfire.Divlab.Web.TaskRowLive
-            task={task}
-            view={@view}
-            members={@members}
-            may_delete={MapSet.member?(@deletable, id(task))}
-            event_target={@myself}
-            show_list
-          />
-        {/for}
-      </ul>
-  {/case}
+    {#case @lists[@view] || []}
+      {#match []}
+        <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(@view)}</p>
+      {#match tasks}
+        <ul id="tasks_list" class="divide-hair divide-divider">
+          {#for task <- tasks}
+            <Bonfire.Divlab.Web.TaskRowLive
+              task={task}
+              view={@view}
+              members={@members}
+              may_delete={MapSet.member?(@deletable, id(task))}
+              event_target={@myself}
+              show_list
+            />
+          {/for}
+        </ul>
+    {/case}
   {/if}
 </div>

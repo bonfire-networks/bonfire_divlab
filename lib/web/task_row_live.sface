@@ -67,7 +67,7 @@
         autocomplete="off"
         value={@task.name}
         class="w-full border-0 bg-transparent p-0 py-2 !text-base focus:outline-none focus:ring-0 group-data-[done]:text-base-content/60 group-data-[done]:line-through"
-      >
+      />
     </div>
   {#else}
     <p

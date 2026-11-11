@@ -126,7 +126,10 @@ defmodule Bonfire.Divlab.Web.ListsWebTest do
     |> PhoenixTest.unwrap(fn view ->
       view
       |> element("#list_#{list.id}_lines")
-      |> render_hook("Bonfire.Divlab:list_add", %{"list_id" => list.id, "text" => "Book the train"})
+      |> render_hook("Bonfire.Divlab:list_add", %{
+        "list_id" => list.id,
+        "text" => "Book the train"
+      })
 
       render(view)
     end)
@@ -146,8 +149,19 @@ defmodule Bonfire.Divlab.Web.ListsWebTest do
 
   test "the Tasks page opens on Lists, in the order Tasks.lists/2 gives",
        %{account: account, me: me, group: group, path: path} do
-    {:ok, _} = Tasks.create_list(%{name: "Launch"}, [], current_user: me, context_id: group.id, boundary: "members:private")
-    {:ok, _} = Tasks.create_list(%{name: "Someday"}, [], current_user: me, context_id: group.id, boundary: "members:private")
+    {:ok, _} =
+      Tasks.create_list(%{name: "Launch"}, [],
+        current_user: me,
+        context_id: group.id,
+        boundary: "members:private"
+      )
+
+    {:ok, _} =
+      Tasks.create_list(%{name: "Someday"}, [],
+        current_user: me,
+        context_id: group.id,
+        boundary: "members:private"
+      )
 
     session =
       conn(user: me, account: account)

@@ -62,7 +62,12 @@ defmodule Bonfire.Divlab.Web.CreateTasksLive do
   def into_label("new", _lists), do: l("New list")
 
   def into_label(list_id, lists),
-    do: Enum.find_value(lists, l("Pick a list"), &(&1.id == list_id && Bonfire.Divlab.Web.Preview.ListLive.list_name(&1)))
+    do:
+      Enum.find_value(
+        lists,
+        l("Pick a list"),
+        &(&1.id == list_id && Bonfire.Divlab.Web.Preview.ListLive.list_name(&1))
+      )
 
   # the group this would create in, if it has Tasks on; `nil` anywhere else
   defp tasks_group(nil, _context), do: nil

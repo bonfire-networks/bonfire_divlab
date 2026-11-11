@@ -36,8 +36,8 @@ defmodule Bonfire.Divlab.Web.TaskOwnerPickerLive do
 
   @doc "Who the search offers: people matching `search` who are members of `group` (one query for the whole page of results, not a check per person)."
   def options(search, group) do
+    # the database's matches too: a search index (Sonic) can answer with a few users and miss the members, and `Users.search/2` only falls back to the database on an empty answer, so `db_merge` (`Bonfire.Search.search_by_type/3`) asks both
     users =
-      # the database's matches too: a search index (Sonic) can answer with a few users and miss the members, and `Users.search/2` only falls back to the database on an empty answer, so `db_merge` (`Bonfire.Search.search_by_type/3`) asks both
       Bonfire.Me.Users.search(search, db_merge: true)
       |> Enum.map(fn
         %Needle.Pointer{activity: %{object: user}} -> user

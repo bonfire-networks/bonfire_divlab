@@ -18,7 +18,7 @@
             phx-key="Enter"
             phx-target={@myself}
             class="w-full border-0 bg-transparent p-0 !text-xl font-medium placeholder:text-base-content/40 focus:outline-none focus:ring-0"
-          >
+          />
         </div>
       {#else}
         <h2 class="min-w-0 flex-1 break-words text-xl font-medium">{ListLive.list_name(@list)}</h2>
@@ -145,9 +145,12 @@
           autocomplete="off"
           placeholder={if @items == [], do: l("Write the first item, then press Enter"), else: l("Add an item")}
           class="w-full border-0 bg-transparent p-0 py-2 !text-base placeholder:text-base-content/40 focus:outline-none focus:ring-0"
-        >
+        />
       </div>
     </li>
   </ul>
-  <p :if={@items == [] && !(@may_edit && !@list.finished)} class="px-4 py-6 text-sm text-muted sm:px-6">{l("No items yet.")}</p>
+  <p
+    :if={@items == [] && !(@may_edit && !@list.finished)}
+    class="px-4 py-6 text-sm text-muted sm:px-6"
+  >{l("No items yet.")}</p>
 </section>

@@ -14,7 +14,10 @@
     <ul :if={@open_items != []} class="flex flex-col gap-1">
       {#for item <- @open_items}
         <li data-role="list_open_item" class="flex items-start gap-2 text-sm">
-          <span class="mt-[3px] size-3.5 shrink-0 rounded-full border-[1.5px] border-base-content/50" aria-hidden="true" />
+          <span
+            class="mt-[3px] size-3.5 shrink-0 rounded-full border-[1.5px] border-base-content/50"
+            aria-hidden="true"
+          />
           <span class="min-w-0 break-words">{item.name}</span>
         </li>
       {/for}

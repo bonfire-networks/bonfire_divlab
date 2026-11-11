@@ -25,7 +25,8 @@ defmodule Bonfire.Divlab.Tasks do
     # every line is checked before anything runs: the group's boost of the list pushes to open feeds at once (`Bonfire.Social.Boosts`), so a batch failing on a later line would leave a phantom list there
     with {:ok, items} <- check_lines(lines) do
       repo().transact_with(fn ->
-        with {:ok, list} <- run_epic(:create_list, :list, Keyword.put(opts, :list_attrs, list_attrs)),
+        with {:ok, list} <-
+               run_epic(:create_list, :list, Keyword.put(opts, :list_attrs, list_attrs)),
              {:ok, items} <- insert_items(items, list.id, opts) do
           {:ok, %{list: list, items: items}}
         end
@@ -66,7 +67,10 @@ defmodule Bonfire.Divlab.Tasks do
         []
       else
         # a bullet with nothing after it (`-`, an empty pad line whose space an editor trimmed) is blank too
-        case Regex.named_captures(~r/^\s*(?:[-*+](?:\s+|$))?(?:\[(?<box>[ xX])\]\s*)?(?<name>.*?)\s*$/u, line) do
+        case Regex.named_captures(
+               ~r/^\s*(?:[-*+](?:\s+|$))?(?:\[(?<box>[ xX])\]\s*)?(?<name>.*?)\s*$/u,
+               line
+             ) do
           %{"name" => ""} -> []
           %{"box" => box, "name" => name} -> [%{name: name, finished: box in ["x", "X"]}]
         end
@@ -91,7 +95,9 @@ defmodule Bonfire.Divlab.Tasks do
       |> repo().many()
       |> Enum.split_with(& &1.finished)
 
-    {:ok, Enum.sort_by(open, & &1.id, :desc) ++ Enum.sort_by(closed, & &1.updated_at, {:desc, DateTime})}
+    {:ok,
+     Enum.sort_by(open, & &1.id, :desc) ++
+       Enum.sort_by(closed, & &1.updated_at, {:desc, DateTime})}
   end
 
   @doc "The items of a list the user can see, in the order they were written."
@@ -103,7 +109,15 @@ defmodule Bonfire.Divlab.Tasks do
   @doc "The first `limit` open items of a list the user can see, in the order they were written: what a list's feed card shows."
   def open_items(list_id, limit, opts) when is_binary(list_id) do
     me = Bonfire.Common.Utils.current_user(opts)
-    Intents.many([:deleted, user: me, input_of_id: list_id, status: :open, order: [asc: :id], limit: limit])
+
+    Intents.many([
+      :deleted,
+      user: me,
+      input_of_id: list_id,
+      status: :open,
+      order: [asc: :id],
+      limit: limit
+    ])
   end
 
   @doc """
@@ -149,7 +163,10 @@ defmodule Bonfire.Divlab.Tasks do
              {:ok, _} <- Bonfire.Common.Repo.Delete.soft_delete(list) do
           # every item of the list, not only those the deleter can see: they go with the list
           {_count, item_ids} =
-            from(i in Intent, where: i.input_of_id == ^list.id and is_nil(i.deleted_at), select: i.id)
+            from(i in Intent,
+              where: i.input_of_id == ^list.id and is_nil(i.deleted_at),
+              select: i.id
+            )
             |> repo().update_all(set: [deleted_at: DateTime.utc_now()])
 
           # feeds don't hide soft-deleted VF objects (see `delete/2`): every activity of the list and its items goes, in one query
@@ -234,12 +251,20 @@ defmodule Bonfire.Divlab.Tasks do
 
   @doc "The ids of `tasks` that `user` may delete, as `may_delete?/2` decides for each, with one boundary query for all the ones they didn't create."
   def deletable(user, tasks) do
-    {mine, others} = Enum.split_with(tasks, &(not is_nil(&1.creator_id) and &1.creator_id == Enums.id(user)))
+    {mine, others} =
+      Enum.split_with(tasks, &(not is_nil(&1.creator_id) and &1.creator_id == Enums.id(user)))
 
     permitted =
       case others do
-        [] -> []
-        _ -> Bonfire.Boundaries.load_pointers(Enum.map(others, &Enums.id/1), current_user: user, verbs: [:delete], ids_only: true)
+        [] ->
+          []
+
+        _ ->
+          Bonfire.Boundaries.load_pointers(Enum.map(others, &Enums.id/1),
+            current_user: user,
+            verbs: [:delete],
+            ids_only: true
+          )
       end
 
     MapSet.new(Enum.map(mine, &Enums.id/1) ++ Enum.map(permitted, &Enums.id/1))
@@ -369,7 +394,14 @@ defmodule Bonfire.Divlab.Tasks do
   end
 
   defp update_lock_list(list_id),
-    do: locked(from(p in ValueFlows.Process, where: p.id == ^list_id and is_nil(p.deleted_at), lock: "FOR UPDATE", select: p.id))
+    do:
+      locked(
+        from(p in ValueFlows.Process,
+          where: p.id == ^list_id and is_nil(p.deleted_at),
+          lock: "FOR UPDATE",
+          select: p.id
+        )
+      )
 
   defp locked(query), do: if(repo().one(query), do: :ok, else: {:error, :not_found})
 

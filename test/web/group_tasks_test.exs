@@ -49,7 +49,12 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
     end
 
     # `/tasks` now opens on Lists (tasks-v2 §1, lists_web_test.exs); Mine keeps its own path
-    test "Mine shows my open tasks only", %{account: account, ivan: ivan, group: group, path: path} do
+    test "Mine shows my open tasks only", %{
+      account: account,
+      ivan: ivan,
+      group: group,
+      path: path
+    } do
       task!(ivan, group, "Fix the gate", provider_id: ivan.id)
       task!(ivan, group, "Water the plants")
 
