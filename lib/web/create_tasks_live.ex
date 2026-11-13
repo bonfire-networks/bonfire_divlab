@@ -20,6 +20,7 @@ defmodule Bonfire.Divlab.Web.CreateTasksLive do
   prop reply_to_id, :any, default: nil
   prop thread_mode, :any, default: nil
   prop uploaded_files, :list, default: nil
+  prop composer_policy, :map, default: nil
 
   data group, :any, default: nil
   data lists, :list, default: []
