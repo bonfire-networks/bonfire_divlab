@@ -65,8 +65,24 @@ defmodule Bonfire.Divlab.Tasks.ListTest do
     assert names(:done, me, group) == ["finished last", "finished first"]
   end
 
+  test "my Done lists only the finished tasks I did, the most recently changed first",
+       %{me: me, other: other, group: group, other_group: other_group} do
+    finished_last = task!(me, group, "finished last", provider_id: me.id)
+    finished_first = task!(me, group, "finished first", provider_id: me.id)
+    task!(me, group, "still open", provider_id: me.id)
+    theirs = task!(me, group, "someone else's", provider_id: other.id)
+    nobodys = task!(me, group, "nobody's")
+    elsewhere = task!(me, other_group, "elsewhere", provider_id: me.id)
+
+    for task <- [finished_first, theirs, nobodys, elsewhere, finished_last],
+        do: {:ok, _} = Tasks.done(task.id, current_user: me)
+
+    assert names(:mine_done, me, group) == ["finished last", "finished first"]
+  end
+
   test "a guest has no Mine or Waiting on, rather than an error", %{group: group} do
     assert {:ok, []} = Tasks.list(:mine, group.id, current_user: nil)
     assert {:ok, []} = Tasks.list(:waiting, group.id, current_user: nil)
+    assert {:ok, []} = Tasks.list(:mine_done, group.id, current_user: nil)
   end
 end

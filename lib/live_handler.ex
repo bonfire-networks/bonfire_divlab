@@ -150,7 +150,7 @@ defmodule Bonfire.Divlab.LiveHandler do
   def handle_event("unassign", %{"task_id" => task_id}, socket) do
     task_id
     |> Bonfire.Divlab.Tasks.unassign(current_user: current_user_required!(socket))
-    |> after_row_action(socket, l("Back in the Inbox"))
+    |> after_row_action(socket, l("Unassigned"))
   end
 
   def handle_event("delete", %{"task_id" => task_id}, socket) do

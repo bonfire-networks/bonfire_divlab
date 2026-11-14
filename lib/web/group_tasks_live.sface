@@ -1,13 +1,13 @@
 <section :if={@enabled?} id="group_tasks" class="flex flex-col">
-  <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-1 sm:px-6">
-    <h1 class="text-lg">{l("Tasks")}</h1>
+  <header class="flex items-center justify-between gap-3 px-4 pt-5 pb-4 sm:px-6">
+    <h1 class="text-2xl font-semibold tracking-tight">{l("Tasks")}</h1>
     <Bonfire.UI.Common.SmartInputButtonLive
       id="group_tasks_new"
       component={Bonfire.Divlab.Web.CreateTasksLive}
       prompt={l("Add tasks")}
       icon="ph:plus"
       icon_class="size-4"
-      class="btn btn-sm btn-ghost gap-1.5 border border-base-content/15 !font-normal"
+      class="btn btn-sm btn-primary gap-1.5"
       smart_input_opts={%{
         context_id: id(@category),
         create_object_type: :task,

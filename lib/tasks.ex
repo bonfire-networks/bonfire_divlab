@@ -186,9 +186,9 @@ defmodule Bonfire.Divlab.Tasks do
   def rename(item_id, name, opts), do: triage(item_id, %{name: name}, opts)
 
   @doc """
-  Lists a group's tasks for one of the Tasks tab's views, through the tasks' boundaries.
+  Lists a group's tasks for one view, through the tasks' boundaries. The Tasks page shows `:mine` and `:mine_done` (My tasks) and the list-less part of `:inbox` (Lists); `:waiting` and `:done` are no longer on the page since 2026-11-13 and stay for now.
 
-  Views of open tasks: `:inbox` (nobody has taken it, newest first), `:mine` (I'm doing it) and `:waiting` (I asked someone else to do it), all newest first (tasks-v2 decision 24). `:done` is the latest 50 finished tasks, most recently changed first.
+  Views of open tasks: `:inbox` (nobody has taken it, newest first), `:mine` (I'm doing it) and `:waiting` (I asked someone else to do it), all newest first (tasks-v2 decision 24). `:done` is the latest 50 finished tasks, most recently changed first, and `:mine_done` the latest 50 of those I did.
   """
   def list(view, group_id, opts) do
     me = Bonfire.Common.Utils.current_user(opts)
@@ -207,7 +207,7 @@ defmodule Bonfire.Divlab.Tasks do
   end
 
   @doc """
-  Makes `user_id` the task's provider, who does it. Assigning someone else also makes the assigner its receiver when it has none, so it shows in their Waiting on.
+  Makes `user_id` the task's provider, who does it. Assigning someone else also makes the assigner its receiver when it has none (who's waiting on it, read by `:waiting`).
 
   Needs `:tag` on the task's group, as creating a task does, and `user_id` must be one of its members (`may_own?/2`).
   """
@@ -229,7 +229,7 @@ defmodule Bonfire.Divlab.Tasks do
   @doc "Marks a finished task open again, back in whichever views it matches. Needs `:tag` on its group."
   def reopen(task_id, opts), do: triage(task_id, %{finished: false}, opts)
 
-  @doc "Takes the owner off the task, which puts it back in the Inbox, and forgets who was waiting on it, so whoever takes it next doesn't land in their Waiting on. Needs `:tag` on its group."
+  @doc "Takes the owner off the task, so anyone can take it again, and forgets who was waiting on it, so whoever takes it next doesn't inherit that receiver. Needs `:tag` on its group."
   def unassign(task_id, opts), do: triage(task_id, %{provider_id: nil, receiver_id: nil}, opts)
 
   @doc "Soft-deletes the task and removes its activities from the feeds. Only its creator, or someone its boundaries give `:delete` (moderators), may."
@@ -285,7 +285,7 @@ defmodule Bonfire.Divlab.Tasks do
       else: {:error, :not_permitted}
   end
 
-  defp view_filters(view, nil) when view in [:mine, :waiting], do: nil
+  defp view_filters(view, nil) when view in [:mine, :waiting, :mine_done], do: nil
 
   defp view_filters(:inbox, _me_id), do: [status: :open, provider_id: :none, order: [desc: :id]]
 
@@ -303,6 +303,9 @@ defmodule Bonfire.Divlab.Tasks do
   # Done only grows, so the latest 50 (D9b); `updated_at` is when it was last changed, usually when it was checked off
   defp view_filters(:done, _me_id),
     do: [status: :closed, order: [desc: :updated_at], limit: 50]
+
+  defp view_filters(:mine_done, me_id) when is_binary(me_id),
+    do: [status: :closed, provider_id: me_id, order: [desc: :updated_at], limit: 50]
 
   defp triage(task_id, attrs, opts) do
     me = Bonfire.Common.Utils.current_user(opts)

@@ -1,5 +1,5 @@
 defmodule Bonfire.Divlab.Web.ListsWebTest do
-  @moduledoc "A list's card in feeds, its own page, and the Lists tab (tasks-v2 §14)."
+  @moduledoc "A list's card in feeds, its own page, and the Tasks page's Lists and My tasks (tasks-v2 §14)."
   use Bonfire.Divlab.ConnCase, async: false
 
   import Bonfire.Divlab.TasksFixtures
@@ -195,11 +195,46 @@ defmodule Bonfire.Divlab.Web.ListsWebTest do
     |> refute_has("[data-role=list_preview]")
   end
 
-  test "an item in the Inbox shows its list's name, linking to the list",
+  test "in My tasks an item sits under its list's name, linking to the list",
        %{account: account, me: me, list: list, first: first, path: path} do
+    {:ok, _} = Tasks.assign(first.id, me.id, current_user: me)
+
     conn(user: me, account: account)
-    |> visit(path <> "/tasks/inbox")
-    |> assert_has("#task_#{first.id} [data-role=task_list]", text: "Sprint 47")
-    |> assert_has("#task_#{first.id} a[data-role=task_list][href='/discussion/#{list.id}']")
+    |> visit(path <> "/tasks/mine")
+    |> assert_has("[data-role=tasks_group] a[href='/discussion/#{list.id}']", text: "Sprint 47")
+    |> assert_has("[data-role=tasks_group] #task_#{first.id}")
+  end
+
+  test "a list's card on the Tasks page counts my open items in it",
+       %{account: account, me: me, list: list, first: first, second: second, path: path} do
+    session = conn(user: me, account: account)
+
+    session
+    |> visit(path <> "/tasks")
+    |> refute_has("#task_list_#{list.id} [data-role=list_row_mine]")
+
+    for item <- [first, second], do: {:ok, _} = Tasks.assign(item.id, me.id, current_user: me)
+    {:ok, _} = Tasks.done(second.id, current_user: me)
+
+    session
+    |> visit(path <> "/tasks")
+    |> assert_has("#task_list_#{list.id} [data-role=list_row_mine]", text: "1 yours")
+  end
+
+  test "on the list page, Take it is only offered on open items nobody has",
+       %{account: account, me: me, list: list, first: first, second: second} do
+    {:ok, _} = Tasks.assign(second.id, me.id, current_user: me)
+
+    session =
+      conn(user: me, account: account)
+      |> visit("/discussion/#{list.id}")
+      |> assert_has("#task_#{first.id}_take")
+      |> refute_has("#task_#{second.id}_take")
+
+    {:ok, _} = Tasks.done(first.id, current_user: me)
+
+    session
+    |> visit("/discussion/#{list.id}")
+    |> refute_has("#task_#{first.id}_take")
   end
 end

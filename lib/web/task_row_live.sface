@@ -92,9 +92,9 @@
     >{e(@task, :input_of, :name, nil)}</a>
   {/if}
 
-  {!-- revealed on hover and keyboard focus, always shown where there's no hover --}
+  {!-- on a list's page, or among the tasks without a list, for an open task nobody has taken; revealed on hover and keyboard focus, always shown where there's no hover --}
   <button
-    :if={@view == :inbox}
+    :if={@view in [:list, :loose] and is_nil(@task.provider_id) and !@done?}
     type="button"
     id={"task_#{id(@task)}_take"}
     phx-click="Bonfire.Divlab:take"
@@ -145,7 +145,7 @@
       class="btn btn-ghost btn-sm mt-1 justify-start gap-2 border-t border-base-content/10 !font-normal text-base-content/70"
     >
       <span class="size-5 rounded-full border border-dashed border-base-content/50" />
-      {l("Nobody, back to the Inbox")}
+      {l("Nobody")}
     </button>
   </Dropdown>
 

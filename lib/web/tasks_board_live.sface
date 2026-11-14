@@ -1,66 +1,141 @@
 <div id="tasks_board" class="flex flex-col">
-  <nav
-    aria-label={l("Task views")}
-    class="flex gap-1 overflow-x-auto border-b-hair border-divider px-4 sm:px-6"
-  >
-    {#for view <- views()}
-      <LinkPatchLive
-        to={"#{path(@category)}/tasks/#{view}"}
-        class={
-          "flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-sm transition-colors",
-          "border-primary text-base-content": view == @view,
-          "border-transparent text-muted hover:text-base-content": view != @view
-        }
-        opts={[id: "tasks_tab_#{view}", "aria-current": if(view == @view, do: "page")]}
-      >
-        {view_label(view)}
-        <span :if={view != :done} data-role="count" class="text-xs tabular-nums text-muted">{if view == :lists, do: length(@task_lists), else: length(@lists[view] || [])}</span>
-      </LinkPatchLive>
-    {/for}
+  {!-- the two views as a two-part switch; each is its own path, so a view can be bookmarked (D8a) --}
+  <nav aria-label={l("Task views")} class="px-4 pb-4 sm:px-6">
+    <div class="inline-flex gap-0.5 rounded-lg bg-base-content/7 p-[3px]">
+      {#for view <- views()}
+        <LinkPatchLive
+          to={"#{path(@category)}/tasks/#{view}"}
+          class={
+            "inline-flex h-8 items-center gap-1.5 rounded-md px-3.5 text-sm transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+            "bg-base-100 text-base-content shadow-sm ring-1 ring-base-content/10": view == @view,
+            "text-base-content/65 hover:text-base-content": view != @view
+          }
+          opts={[id: "tasks_tab_#{view}", "aria-current": if(view == @view, do: "page")]}
+        >
+          {view_label(view)}
+          <span data-role="count" class="text-xs tabular-nums text-base-content/50">{view_count(view, @task_lists, @lists)}</span>
+        </LinkPatchLive>
+      {/for}
+    </div>
   </nav>
+
   {#if @view == :lists}
     {#if @task_lists == []}
       <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(:lists)}</p>
     {#else}
-      <ul id="task_lists" class="divide-hair divide-divider">
-        {#for list <- @task_lists}
-          <li>
-            <a
-              href={"/discussion/#{id(list)}"}
-              id={"task_list_#{id(list)}"}
-              data-role="list_row"
-              class={
-                "flex flex-col gap-0.5 px-4 py-3 transition-colors hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-6",
-                "opacity-70": list.finished
-              }
-            >
-              <span data-role="list_row_name" class="break-words font-medium">{Bonfire.Divlab.Web.Preview.ListLive.list_name(list)}</span>
-              <span class="flex flex-wrap gap-x-1.5 text-sm text-muted [&>*+*]:before:mr-1.5 [&>*+*]:before:inline-block [&>*+*]:before:content-['·']">
-                <span :if={list.finished}>{l("Closed")}</span>
-                <span class="tabular-nums">{list_progress(@progress, list)}</span>
-              </span>
-            </a>
-          </li>
-        {/for}
-      </ul>
-    {/if}
-  {#else}
-    {#case @lists[@view] || []}
-      {#match []}
-        <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(@view)}</p>
-      {#match tasks}
-        <ul id="tasks_list" class="divide-hair divide-divider">
-          {#for task <- tasks}
-            <Bonfire.Divlab.Web.TaskRowLive
-              task={task}
-              view={@view}
-              members={@members}
-              may_delete={MapSet.member?(@deletable, id(task))}
-              event_target={@myself}
-              show_list
-            />
+      {#for {lists, closed?} <- open_and_closed(@task_lists)}
+        <h2 :if={closed?} class="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50 sm:px-6">{l("Closed")}</h2>
+        <ul
+          id={if closed?, do: "task_lists_closed", else: "task_lists"}
+          class="grid grid-cols-1 gap-2.5 px-4 pb-4 sm:grid-cols-2 sm:px-6"
+        >
+          {#for list <- lists}
+            <li>
+              <a
+                href={"/discussion/#{id(list)}"}
+                id={"task_list_#{id(list)}"}
+                data-role="list_row"
+                class={
+                  "flex h-full flex-col gap-3 rounded-xl border border-base-content/10 p-4 transition-colors hover:border-base-content/20 hover:bg-base-content/[0.03] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  "opacity-60": list.finished
+                }
+              >
+                <span
+                  data-role="list_row_name"
+                  title={Bonfire.Divlab.Web.Preview.ListLive.list_name(list)}
+                  class="line-clamp-2 break-words font-medium sm:min-h-[2.6em]"
+                >{Bonfire.Divlab.Web.Preview.ListLive.list_name(list)}</span>
+                {!-- the bar the list's own page uses (`list_page_live.sface`); the label below says the same, so it's hidden from screen readers --}
+                <progress
+                  class={"progress h-1", "progress-success": complete?(@progress, list), "progress-primary": !complete?(@progress, list)}
+                  value={counts(@progress, list) |> elem(0)}
+                  max={counts(@progress, list) |> elem(1) |> max(1)}
+                  aria-hidden="true"
+                />
+                <span class="flex items-center gap-2 text-sm tabular-nums text-muted">
+                  {list_progress(@progress, list)}
+                  <span
+                    :if={@mine_by_list[id(list)]}
+                    data-role="list_row_mine"
+                    class="ml-auto rounded-full bg-primary/15 px-2 py-px text-xs text-primary"
+                  >{lp("%{count} yours", "%{count} yours", @mine_by_list[id(list)], count: @mine_by_list[id(list)])}</span>
+                </span>
+              </a>
+            </li>
           {/for}
         </ul>
-    {/case}
+      {/for}
+    {/if}
+    {!-- open tasks nobody has, from before every task had a list: no list page shows them, so they're here to be taken --}
+    <section :if={(@lists[:loose] || []) != []} id="tasks_loose" class="pb-4">
+      <h2 class="px-4 pt-4 pb-2 text-xs font-semibold uppercase tracking-wide text-base-content/50 sm:px-6">{l("Without a list")}</h2>
+      <ul class="divide-hair divide-divider">
+        {#for task <- @lists[:loose]}
+          <Bonfire.Divlab.Web.TaskRowLive
+            task={task}
+            view={:loose}
+            members={@members}
+            may_delete={MapSet.member?(@deletable, id(task))}
+            event_target={@myself}
+          />
+        {/for}
+      </ul>
+    </section>
+  {#else}
+    {#if (@lists[:mine] || []) == []}
+      <p id="tasks_empty" role="status" class="px-4 py-10 text-center text-muted">{empty_message(:mine)}</p>
+    {#else}
+      <div id="tasks_list">
+        {!-- my open tasks under the list each is in; the rows don't repeat its name --}
+        {#for {list, tasks} <- by_list(@lists[:mine], @task_lists)}
+          <section class="pt-3" data-role="tasks_group">
+            <a
+              :if={list}
+              href={"/discussion/#{id(list)}"}
+              class="flex items-center gap-2 px-4 pb-1 text-sm text-muted underline-offset-2 hover:text-base-content hover:underline sm:px-6"
+            >
+              <span class="truncate">{Bonfire.Divlab.Web.Preview.ListLive.list_name(list)}</span>
+              <span class="shrink-0 tabular-nums text-base-content/50">{list_progress(@progress, list)}</span>
+            </a>
+            <ul class="divide-hair divide-divider">
+              {#for task <- tasks}
+                <Bonfire.Divlab.Web.TaskRowLive
+                  task={task}
+                  view={:mine}
+                  members={@members}
+                  may_delete={MapSet.member?(@deletable, id(task))}
+                  event_target={@myself}
+                />
+              {/for}
+            </ul>
+          </section>
+        {/for}
+      </div>
+    {/if}
+    {!-- my done tasks, collapsed; it stays open across reloads, since the patch leaves `open` alone --}
+    <details
+      :if={(@lists[:mine_done] || []) != []}
+      id="tasks_done"
+      phx-mounted={Phoenix.LiveView.JS.ignore_attributes(["open"])}
+      class="group/done mt-3 border-t-hair border-divider"
+    >
+      <summary class="flex cursor-pointer list-none items-center gap-2 px-4 py-3 text-sm text-muted hover:bg-base-content/5 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary sm:px-6 [&::-webkit-details-marker]:hidden">
+        <#Icon iconify="ph:caret-right" class="size-3.5 transition-transform group-open/done:rotate-90" />
+        {l("Done")}
+        <span data-role="count" class="tabular-nums text-base-content/50">{done_count(@lists[:mine_done])}</span>
+      </summary>
+      <ul class="divide-hair divide-divider">
+        {#for task <- @lists[:mine_done]}
+          <Bonfire.Divlab.Web.TaskRowLive
+            task={task}
+            view={:mine}
+            members={@members}
+            may_delete={MapSet.member?(@deletable, id(task))}
+            event_target={@myself}
+            show_list
+          />
+        {/for}
+      </ul>
+    </details>
   {/if}
 </div>
