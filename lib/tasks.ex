@@ -170,7 +170,11 @@ defmodule Bonfire.Divlab.Tasks do
             |> repo().update_all(set: [deleted_at: DateTime.utc_now()])
 
           # feeds don't hide soft-deleted VF objects (see `delete/2`): every activity of the list and its items goes, in one query
-          Bonfire.Social.Activities.delete({:object_id, [list.id | item_ids]})
+          # skipped: the deleter was checked against the list above, and its items' activities (other people's) go with it
+          Bonfire.Social.Activities.delete({:object_id, [list.id | item_ids]},
+            skip_boundary_check: true
+          )
+
           :ok
         end
       end)
@@ -240,7 +244,8 @@ defmodule Bonfire.Divlab.Tasks do
          :ok <- may_delete(me, task),
          {:ok, deleted} <- Bonfire.Common.Repo.Delete.soft_delete(task) do
       # feeds don't hide a soft-deleted Intent, so its create activity and the group's boost of it go, as `Bonfire.Social.Objects.do_delete/2` does for a post
-      Bonfire.Social.Activities.delete_by_object(task.id)
+      # skipped: the deleter was checked above, and the task is soft-deleted by now, so boundaries no longer see it
+      Bonfire.Social.Activities.delete_by_object(task.id, skip_boundary_check: true)
       {:ok, deleted}
     end
   end
@@ -281,7 +286,7 @@ defmodule Bonfire.Divlab.Tasks do
   def set_enabled(group, enabled?, opts) when is_boolean(enabled?) do
     # `Settings.put/3` doesn't check who may write to a scope it's handed, so the check is here
     if Bonfire.Classify.ensure_update_allowed(Bonfire.Common.Utils.current_user(opts), group),
-      do: Settings.put([__MODULE__, :enabled], enabled?, scope: group),
+      do: Settings.put([__MODULE__, :enabled], enabled?, scope: group, skip_boundary_check: true),
       else: {:error, :not_permitted}
   end
 

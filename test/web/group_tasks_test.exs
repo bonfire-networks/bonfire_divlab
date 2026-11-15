@@ -115,7 +115,9 @@ defmodule Bonfire.Divlab.Web.GroupTasksTest do
 
       {:ok, _} = Tasks.assign(item.id, ivan.id, current_user: ivan)
       # the list alone gone, its item left: `Tasks.lists/2` no longer returns it
-      list |> Ecto.Changeset.change(deleted_at: DateTime.utc_now()) |> Bonfire.Common.Repo.update!()
+      list
+      |> Ecto.Changeset.change(deleted_at: DateTime.utc_now())
+      |> Bonfire.Common.Repo.update!()
 
       conn(user: ivan, account: account)
       |> visit(path <> "/mine")

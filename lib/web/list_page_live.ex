@@ -37,6 +37,7 @@ defmodule Bonfire.Divlab.Web.ListPageLive do
     socket = assign(socket, assigns)
     list = socket.assigns.list
     context = socket.assigns[:__context__]
+    current_user = current_user(context)
     group = load_group(list.context_id, context)
 
     {:ok,
@@ -44,8 +45,8 @@ defmodule Bonfire.Divlab.Web.ListPageLive do
      |> assign(
        loaded_id: list.id,
        members: TasksBoardLive.members(group, context),
-       may_edit: Bonfire.Boundaries.can?(current_user(context), :tag, list.context_id) == true,
-       may_delete_list: Tasks.may_delete?(current_user(context), list),
+       may_edit: Bonfire.Boundaries.can?(current_user, :tag, list.context_id) == true,
+       may_delete_list: Tasks.may_delete?(current_user, list),
        boundary:
          group && group |> Bonfire.Classify.Boundaries.list_post_audiences() |> List.first()
      )

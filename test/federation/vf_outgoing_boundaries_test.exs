@@ -79,6 +79,6 @@ defmodule Bonfire.Divlab.Federation.VfOutgoingBoundariesTest do
     end)
 
     assert {:ok, %{name: "Renamed"}} =
-             Proposals.update(%{proposal | creator: user}, %{name: "Renamed"})
+             Proposals.update(%{proposal | creator: user}, %{name: "Renamed"}, current_user: user)
   end
 end

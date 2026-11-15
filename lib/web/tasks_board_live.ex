@@ -73,8 +73,8 @@ defmodule Bonfire.Divlab.Web.TasksBoardLive do
     group_id = id(socket.assigns.category)
     view = socket.assigns.view
 
+    # Lists are Processes, loaded below; my done tasks have no count, so they're only loaded where they show (D9a)
     lists =
-      # Lists are Processes, loaded below; my done tasks have no count, so they're only loaded where they show (D9a)
       if(view == :mine, do: [:mine, :mine_done], else: [:mine, :inbox])
       |> Map.new(fn view ->
         {:ok, tasks} = Tasks.list(view, group_id, current_user: me)
