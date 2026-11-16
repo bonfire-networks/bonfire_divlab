@@ -105,7 +105,7 @@ defmodule Bonfire.Divlab.Web.CreateTasksTest do
       composer = composer_view(view)
 
       composer
-      |> element("#composer_type_tray_rail button[phx-click*='CreateTasksLive']")
+      |> element("#composer_type_menu_panel button[phx-click*='CreateTasksLive']")
       |> render_click()
 
       assert has_element?(composer, "#smart_input_task_unavailable")
