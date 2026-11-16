@@ -50,6 +50,8 @@ defmodule Bonfire.Divlab.Federation.VfOutgoingBoundariesTest do
 
   defp cc_followers?(_, _), do: false
 
+  # unit 3 (VF federation boundary) is parked in a bonfire_valueflows stash, 2026-11-08: unskip when it comes back
+  @tag :skip
   test "a public proposal federates, addressed to the public and followers", %{user: user} do
     {:ok, proposal} = Proposals.create(user, %{name: "Open offer", to_boundaries: "public"})
 
