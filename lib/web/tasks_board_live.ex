@@ -49,7 +49,7 @@ defmodule Bonfire.Divlab.Web.TasksBoardLive do
         else:
           socket
           # the composer runs in its own LiveView, so it tells this page through the group's topic when it adds tasks (`Bonfire.Divlab.LiveHandler`'s `create_tasks`); a component runs in its page's process, so this subscribes the page
-          |> tap(&Bonfire.Common.PubSub.subscribe(tasks_topic(id(group)), &1))
+          |> tap(&Bonfire.Common.PubSub.subscribe_once(tasks_topic(id(group)), &1))
           |> assign(
             members:
               group
