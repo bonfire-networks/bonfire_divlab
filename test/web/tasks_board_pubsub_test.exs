@@ -13,7 +13,12 @@ defmodule Bonfire.Divlab.Web.TasksBoardPubsubTest do
     b = tasks_group!(ivan, [])
 
     socket = %Phoenix.LiveView.Socket{
-      assigns: %{__changed__: %{}, __context__: %{current_user: ivan}, view: :lists, members_of: nil}
+      assigns: %{
+        __changed__: %{},
+        __context__: %{current_user: ivan},
+        view: :lists,
+        members_of: nil
+      }
     }
 
     socket =
